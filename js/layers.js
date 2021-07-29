@@ -110,7 +110,7 @@ addLayer("p", {
     }},
     color: "lime",
     resource: "重置点(pp)", // Name of prestige currency
-    baseResource: "数字2",
+    baseResource: "c",
     baseAmount() {return player.c.tbasepoints2},
     requires(){return new ExpantaNum(1.5)},
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
@@ -130,7 +130,7 @@ addLayer("p", {
         if(eff.gte(4)) eff = eff.sqrt().mul(2)
         return eff
     },
-    effectDescription(){return `数字1 -> (数字1-1)^(1/<text style = "color:green">${format(layers.p.effect(),2)}</text>)+1`},
+    effectDescription(){return `b -> (b-1)^(1/<text style = "color:green">${format(layers.p.effect(),2)}</text>)+1`},
     //clickables: {
         //part1
         //11: {
@@ -152,7 +152,7 @@ addLayer("p", {
                 //sc
                 if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
                 if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.25).mul(1000)
+                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
                 if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
                 //p22:sin to p11
                 if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
@@ -161,7 +161,7 @@ addLayer("p", {
             effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}
         },
         12: {
-            description: "多余的数字2并不是在做无用功.\n数字2加成点数.",
+            description: "多余的c并不是在做无用功.\nc加成点数.",
             cost(){return new OmegaNum(256)},
             unlocked(){return hasUpgrade("p",11)},
             effect(){
