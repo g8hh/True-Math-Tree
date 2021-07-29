@@ -118,7 +118,7 @@
   R.ONE=1;
   R.E=Math.E;
   R.LN2=Math.LN2;
-  R.LN10=Math.LN10;
+  R.Lb0=Math.Lb0;
   R.LOG2E=Math.LOG2E;
   R.LOG10E=Math.LOG10E;
   R.PI=Math.PI;
