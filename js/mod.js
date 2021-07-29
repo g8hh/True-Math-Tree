@@ -12,14 +12,19 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.0",
+	num: "0.2-The end of P node",
 	name: "",
 }
 
-let changelog = `<h1>Changelog:</h1><br>
-	<h3>v0.0</h3><br>
-		- Added things.<br>
-		- Added stuff.`
+let changelog = `<h1>更新:</h1><br>
+	<h3>v0.2</h3><br>
+		- 添加3个升级.<br>
+		- 添加两个可购买项.<br>
+		- 重新平衡.<br>
+		- 添加endgame.当前endgame:1e25.<br><br>
+	<h3>v0.1</h3><br>
+		- 添加p节点.<br>
+		- 添加7个升级.`
 
 let winText = `Congratulations! You have reached the end and beaten this game, but for now...`
 
@@ -39,7 +44,8 @@ function canGenPoints(){
 // Calculate points/sec!
 function getPointGen() {
 	if(!canGenPoints) return new ExpantaNum(0)
-	var gain = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1).div(5).mul(player.c.tickspeed)
+	var gain = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1).mul(player.c.tickspeed)
+	gain = gain.div(upgradeEffect("p",13))
 	if(hasUpgrade("p",12)) gain = gain.mul(upgradeEffect("p",12))
 	if(hasUpgrade("p",14)) gain = gain.mul(upgradeEffect("p",14))
 	return gain
@@ -52,13 +58,14 @@ function addedPlayerData() { return {
 // Display extra things at the top of the page
 var displayThings = [
 	function(){return `点数`+(hasUpgrade("p",13)?"基础产量":"")+`= 数字1{箭头数}Min(数字2,1.5)-数字1 (= ${format(player.c.basepoints1,5)}{${format(player.c.arrows),3}}${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?` = ${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}`:"")},
-	function(){return `t = ${format(player.c.tick)}`},
+	function(){return `t = ${format(player.c.tick)},数字2=t/20+1`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
+	function(){return `当前endgame:1e25点数`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return false
+	return player.points.gte(1e25)
 }
 
 
@@ -67,7 +74,7 @@ function isEndgame() {
 
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
-	return(3600) // Default is 1 hour which is just arbitrarily large
+	return(0.1) // Default is 1 hour which is just arbitrarily large
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
