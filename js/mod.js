@@ -12,11 +12,14 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.22",
+	num: "0.23",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+
+	<h3>v0.23</h3><br>
+		- 修复一个bug.<br><br>
 	<h3>v0.22</h3><br>
 		- 再次修改公式的显示.<br>
 		- 高亮显示公式中的变量.<br><br>
@@ -62,10 +65,10 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	function(){return `P `+(hasUpgrade("p",13)?"+":"")+`= <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,1.5)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows),3}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?` = ${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}`:"")},
+	function(){return `P `+(hasUpgrade("p",13)?"+":"")+`= <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,1.5)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows),3}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:1e25点数`},
+	function(){return `当前endgame:1e25点数,约1e8pp`},
 ]
 
 // Determines when the game "ends"
@@ -79,7 +82,7 @@ function isEndgame() {
 
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
-	return(0.1) // Default is 1 hour which is just arbitrarily large
+	return(3600) // Default is 1 hour which is just arbitrarily large
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
