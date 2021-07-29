@@ -17,7 +17,7 @@ let VERSION = {
 }
 
 let changelog = `<h1>更新:</h1><br>
-	<h3>v0.22</h3><br>
+	<h3>v0.3</h3><br>
 		- 修复一个bug.<br>
 		- 添加内容,当前endgame:1e70点数,1e10pp,3ap.<br><br>
 	<h3>v0.23</h3><br>
