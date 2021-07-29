@@ -63,7 +63,7 @@ function addedPlayerData() { return {
 // Display extra things at the top of the page
 var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"")+`= <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,1.5)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows),3}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?` = ${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}`:"")},
-	function(){return `t = ${format(player.c.tick)},c=t/20+1`},
+	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
 	function(){return `当前endgame:1e25点数`},
 ]
