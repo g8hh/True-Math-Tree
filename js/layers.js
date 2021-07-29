@@ -443,7 +443,7 @@ addLayer("p", {
         31: {
             description: "你可以批量购买增量+.移除增量+的价格线性增长.增量+不再花费增量点.",
             cost(){return new OmegaNum(2e6)},
-            unlocked(){return hasUpgrade("p",25)},
+            unlocked(){return hasUpgrade("p",25)&&hasMilestone("a",0)},
             effect(){
                 var baseEff = new ExpantaNum(3)
                 if(hasUpgrade("p",33)) baseEff = baseEff.mul(upgradeEffect("p",33))
@@ -454,7 +454,7 @@ addLayer("p", {
         32: {
             description: "自动购买增量+.(倍增该效果改为除以间隔时间,所有自动化不受时间速率影响)",
             cost(){return new OmegaNum(1e7)},
-            unlocked(){return hasUpgrade("p",31)},
+            unlocked(){return hasUpgrade("p",31)&&hasMilestone("a",0)},
             effect(){
                 var baseEff = 1
                 if(!hasUpgrade("p",32)) baseEff = 1.797e308
@@ -468,7 +468,7 @@ addLayer("p", {
         33: {
             description: "p节点可重复购买项11和12加成p31和p32.",
             cost(){return new OmegaNum(1e8)},
-            unlocked(){return hasUpgrade("p",32)},
+            unlocked(){return hasUpgrade("p",32)&&hasMilestone("a",0)},
             effect(){
                 var baseEff = buyableEffect("p",11).mul(buyableEffect("p",12))
                 return baseEff
@@ -478,7 +478,7 @@ addLayer("p", {
         34: {
             description: "购买p可重复购买项不再花费pp.你可以批量购买p可重复购买项.",
             cost(){return new OmegaNum(1e8)},
-            unlocked(){return hasUpgrade("p",33)},
+            unlocked(){return hasUpgrade("p",33)&&hasMilestone("a",0)},
             effect(){
                 var baseEff = new ExpantaNum(3)
                 return baseEff
@@ -488,7 +488,7 @@ addLayer("p", {
         35: {
             description: "自动购买p可重复购买项.p33加成p34和p35.同时p可重复购买项的价格变为原来的1.25次根.",
             cost(){return new OmegaNum(1e8)},
-            unlocked(){return hasUpgrade("p",34)},
+            unlocked(){return hasUpgrade("p",34)&&hasMilestone("a",0)},
             effect(){
                 var baseEff = new ExpantaNum(5)
                 if(!hasUpgrade("p",35)) baseEff = 1.797e308
