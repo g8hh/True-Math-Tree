@@ -12,11 +12,14 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.21",
+	num: "0.22",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.22</h3><br>
+		- 再次修改公式的显示.<br>
+		- 高亮显示公式中的变量.<br><br>
 	<h3>v0.21</h3><br>
 		- 修改公式的显示.<br><br>
 	<h3>v0.2</h3><br>
@@ -59,8 +62,8 @@ function addedPlayerData() { return {
 
 // Display extra things at the top of the page
 var displayThings = [
-	function(){return `点数`+(hasUpgrade("p",13)?"基础产量":"")+`= 数字1↑<sup>箭头数</sup>Min(数字2,1.5)-数字1 (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows),3}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?` = ${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}`:"")},
-	function(){return `t = ${format(player.c.tick)},数字2=t/20+1`},
+	function(){return `P `+(hasUpgrade("p",13)?"+":"")+`= <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,1.5)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows),3}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?` = ${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}`:"")},
+	function(){return `t = ${format(player.c.tick)},c=t/20+1`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
 	function(){return `当前endgame:1e25点数`},
 ]
