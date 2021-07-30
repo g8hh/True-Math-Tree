@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.4",
+	num: "0.41",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.41</h3><br>
+		- 加速3ap以后的进度.<br><br>
 	<h3>v0.4</h3><br>
 		- 添加内容,当前endgame:约1e110点数,1e26增量点,1e13pp,50高德纳箭头点.<br><br>
 	<h3>v0.31</h3><br>
