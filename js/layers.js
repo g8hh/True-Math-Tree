@@ -192,7 +192,7 @@ addLayer("i", {
             },
             effect(){
                 var baseEff = player.points.mul(1e15).add(1).log10().pow(getBuyableAmount(this.layer,this.id).add(1).pow(0.5).sub(1)).sub(1).max(0)
-                if(player.points.gt(1)) baseEff = baseEff.mul(player.points.log10().pow(2))
+                if(player.points.gt(1)) baseEff = baseEff.mul(player.points.log10().add(1).pow(2))
                 //if(baseEff.gt(1e12)) baseEff = baseEff.cbrt().mul(1e8)
                 return baseEff
             },
