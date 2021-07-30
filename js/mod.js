@@ -2,7 +2,7 @@
 	name: "True Math Tree",
 	id: "True Math Tree",
 	author: "QwQ(QwQe308,qq3174905334)",
-	pointsName: "点数",
+	pointsName: "点数(P)",
 	discordName: "",
 	discordLink: "",
 	initialStartPoints: new ExpantaNum (0), // Used for hard resets and new players
@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.31",
+	num: "0.4",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.4</h3><br>
+		- 添加内容,当前endgame:约1e110点数,1e26增量点,1e13pp,50高德纳箭头点.<br><br>
 	<h3>v0.31</h3><br>
 		- 修复一个bug.<br><br>
 	<h3>v0.3</h3><br>
@@ -60,8 +62,9 @@ function getPointGen() {
 	gain = gain.div(upgradeEffect("p",13))
 	if(hasUpgrade("p",12)) gain = gain.mul(upgradeEffect("p",12))
 	if(hasUpgrade("p",14)) gain = gain.mul(upgradeEffect("p",14))
-	if(!hasMilestone("a",0)) gain = gain.mul(layers.a.effect().pow(12.56))
+	gain = gain.mul(layers.a.effect3())
 	gain = gain.mul(layers.i.effect())
+	if(gain.gt(1e100)) gain = gain.root(4).mul(1e75)
 	return gain
 }
 
@@ -74,12 +77,12 @@ var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:约1e70点数,1e10pp,3高德纳箭头点`},
+	function(){return `当前endgame:约1e110点数,1e26增量点,1e13pp,50高德纳箭头点`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(1e70)&&player.p.points.gte(1e10)&&player.a.points.gte(3)
+	return player.points.gte(1e110)&&player.i.points.gte(1e26)&&player.p.points.gte(1e13)&&player.a.points.gte(50)
 }
 
 
