@@ -307,6 +307,7 @@ addLayer("p", {
             unlocked(){return true},
             effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
+                if(hasMilestone("a",0)) baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(1e12).add(1)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 baseEff = baseEff.mul(buyableEffect("p",12))
