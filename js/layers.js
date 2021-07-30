@@ -840,7 +840,7 @@ addLayer("a", {
         gain = gain.mul(this.baseAmount().div(this.requires()).pow(this.exponent)).pow(this.gainExp()).mul(this.gainMult())
         if(gain.gte(10000)) gain = gain.sqrt().mul(100)
         if(gain.gte(1000000)) gain = gain.cbrt().mul(10000)
-        if(player.a.points.add(gain).gt(getAPlimit())) gain = getAPlimit().sub(player.a.points)
+        if(player.a.points.add(gain).gt(getAPlimit())) gain = getAPlimit().sub(player.a.points).add(0.99999999999999)
         return gain.floor()
     },
     prestigeButtonText(){
