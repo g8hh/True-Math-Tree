@@ -1,5 +1,6 @@
 function calcTickspeed(){
     var tickspeed = new ExpantaNum(1)
+    if(hasMilestone("a",0)) tickspeed = tickspeed.mul(5)
     if(hasUpgrade("p",21)) tickspeed = tickspeed.mul(upgradeEffect("p",21))
     return tickspeed
 }
@@ -789,7 +790,7 @@ addLayer("a", {
     milestones: {
         0: {
             requirementDescription: "3ap",
-            effectDescription: "解锁增量+.解锁新的p转升级.禁用ap对P的加成,pp基于c的获取指数/2,改善p11公式,高德纳箭头要求更高但获取指数更高",
+            effectDescription: "解锁增量+.解锁新的p转升级.禁用ap对P的加成,pp基于c的获取指数/2,改善p11公式,高德纳箭头要求更高但获取指数更高,时间速率x5",
             done() { return player.a.points.gte(3) }
         },
         1: {
