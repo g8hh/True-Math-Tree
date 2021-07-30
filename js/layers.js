@@ -307,7 +307,6 @@ addLayer("p", {
             unlocked(){return true},
             effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasMilestone("a",0)) baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(1e12).add(1)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 baseEff = baseEff.mul(buyableEffect("p",12))
@@ -699,9 +698,9 @@ addLayer("a", {
     },    
     effect3(){
         var eff = player[this.layer].points.mul(10).add(1).root(8).pow(12.56)
-        if(hasMilestone("a",0) && !hasMilestone("a",1)) eff = one
         if(hasMilestone("a",1)) eff = eff.pow(player.p.points.add(1).log10().add(1).log10().add(1).pow(2))
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
+        if(hasMilestone("a",0)) eff = eff.mul(10)
         return eff
     },
     effect4(){
@@ -714,8 +713,7 @@ addLayer("a", {
         var eff1 = `<br>a -> Min(round(a*<text style = "color:green">${format(this.effect1(),2)}</text>),10)`
         if(hasMilestone("a",2)) eff1 = `<br>a -> Max(round(10/<text style = "color:green">${format(this.effect1(),2)}</text>),1)`
         var eff2 = `<br>cmax -> 0.5^(1/<text style = "color:green">${format(this.effect2(),2)}</text>)+1`
-        var eff3 = `<br>P -> P*(1/<text style = "color:green">${format(this.effect3())}</text>`
-        if(hasMilestone("a",0)) eff3 = ""
+        var eff3 = `<br>P -> P*<text style = "color:green">${format(this.effect3())}</text>`
         if(hasMilestone("a",1)) eff3 = `<br>P -> P*<text style = "color:green">${format(this.effect1().pow(12.56))}</text>^(log10(log10(pp+1)+1)+1)^2(=${format(this.effect3())})`
         var eff4 = `<br>pp -> pp*${format(this.effect4())}`
         if(!hasMilestone("a",3)) eff4 = ""
@@ -791,12 +789,12 @@ addLayer("a", {
     milestones: {
         0: {
             requirementDescription: "3ap",
-            effectDescription: "解锁增量+.解锁新的p转升级.禁用ap对P的加成,pp基于c的获取指数/2,改善p11公式,高德纳箭头要求更高但获取指数更高,时间速率x5",
+            effectDescription: "解锁增量+.解锁新的p转升级.pp基于c的获取指数/2,改善p11公式,高德纳箭头要求更高但获取指数更高,时间速率x5,ap对p的加成x10",
             done() { return player.a.points.gte(3) }
         },
         1: {
             requirementDescription: "4ap",
-            effectDescription: "恢复ap对P的加成,并改善该公式.Tip:你可以试着一轮拿两个ap!",
+            effectDescription: "改善ap对P的加成.Tip:你可以试着一轮拿两个ap!",
             done() { return player.a.points.gte(4) },
             unlocked(){return hasMilestone("a",0)},
         },
