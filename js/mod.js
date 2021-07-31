@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.5",
+	num: "0.6",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.6</h3><br>
+		- 添加六个ap升级和四个ap里程碑,当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50次重置升级达到该上限).<br><br>
 	<h3>v0.5</h3><br>
 		- 添加四个ap升级和一个ap里程碑,当前endgame:约1e300点数,1e800增量点,1e20pp,611高德纳箭头点.<br><br>
 	<h3>v0.41</h3><br>
@@ -68,11 +70,15 @@ function getPointGen() {
 	if(hasUpgrade("p",14)) gain = gain.mul(upgradeEffect("p",14))
 	gain = gain.mul(layers.a.effect3())
 	gain = gain.mul(layers.i.effect())
+	if(hasMilestone("a",9)) gain = gain.pow(layers.a.effect5())
 	if(gain.gt(1e100)){
 		var sc = 4
 		if(hasUpgrade("a",12)) sc -= 1
+		if(hasUpgrade("a",22)) sc -= 1
 		gain = gain.root(sc).mul(1e100**(1-1/sc))
-	}
+	}	
+	if(!hasMilestone("a",10)) gain = powsoftcap(gain,e("e500"),e(2))
+	gain = powsoftcap(gain,e("e4000"),e(5))
 	return gain
 }
 
@@ -85,12 +91,12 @@ var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:约1e300点数,1e800增量点,1e20pp,611高德纳箭头点`},
+	function(){return `当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50次重置升级达到该上限).`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte(1e300)&&player.i.points.gte("1e800")&&player.p.points.gte(1e20)&&player.a.points.gte(611)
+	return player.points.gte("1e3800")&&player.i.points.gte("1e2850")&&player.p.points.gte(1e50)&&player.a.points.gte(750000)
 }
 
 
