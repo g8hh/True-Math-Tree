@@ -20,7 +20,7 @@ let changelog = `<h1>更新:</h1><br>
 	<h3>v0.61</h3><br>
 		- 你现在可以禁用重置ap升级按钮的确认框.<br><b
 	<h3>v0.6</h3><br>
-		- 添加六个ap升级和四个ap里程碑,当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50次重置升级达到该上限).<br><br>
+		- 添加六个ap升级和四个ap里程碑,当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50个重置升级达到该上限).<br><br>
 	<h3>v0.5</h3><br>
 		- 添加四个ap升级和一个ap里程碑,当前endgame:约1e300点数,1e800增量点,1e20pp,611高德纳箭头点.<br><br>
 	<h3>v0.41</h3><br>
@@ -93,7 +93,7 @@ var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率 = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50次重置升级达到该上限).`},
+	function(){return `当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50个重置升级达到该上限).`},
 ]
 
 // Determines when the game "ends"
