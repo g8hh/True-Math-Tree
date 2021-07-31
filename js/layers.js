@@ -750,6 +750,7 @@ addLayer("a", {
         costmult: new ExpantaNum(1),
         pointbest: new ExpantaNum(0),
         resetU: new ExpantaNum(0),
+        resetUsetting: false
     }},
     color: "lightblue",
     resource: "高德纳箭头点(ap)", // Name of prestige currency
@@ -827,7 +828,20 @@ addLayer("a", {
         11: {
             canClick(){return true/*hasMilestone("a",7)&&player.a.costmult.gt(1)*/},
             display() {return `重置ap升级<br />这将会进行一次a转<br /><br />当前升级价格倍率:${format(player.a.costmult)}`},
-            onClick(){if(confirm("你确定清除升级吗 这不会返还任何ap")){player.a.resetU = player.a.resetU.add(player.a.upgrades.length-1);player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)}}
+            onClick(){
+                if(player.a.resetUsetting){
+                    player.a.resetU = player.a.resetU.add(player.a.upgrades.length-1);player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)
+                    return
+                }
+                if(confirm("你确定清除升级吗 这不会返还任何ap")){
+                    player.a.resetU = player.a.resetU.add(player.a.upgrades.length-1);player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)
+                }
+            }
+        },
+        12: {
+            canClick(){return true/*hasMilestone("a",7)&&player.a.costmult.gt(1)*/},
+            display() {return `是否禁用重置ap升级的弹窗<br /><br />当前状态:${player.a.resetUsetting?"是":"否"}`},
+            onClick(){player.a.resetUsetting=!player.a.resetUsetting}
         },
     },
     upgrades: {

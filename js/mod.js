@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.6",
+	num: "0.61",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.61</h3><br>
+		- 你现在可以禁用重置ap升级按钮的确认框.<br><b
 	<h3>v0.6</h3><br>
 		- 添加六个ap升级和四个ap里程碑,当前endgame:约1e3800点数,1e2850增量点,1e50pp,750000高德纳箭头点(约50次重置升级达到该上限).<br><br>
 	<h3>v0.5</h3><br>
