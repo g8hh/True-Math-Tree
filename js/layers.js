@@ -825,7 +825,7 @@ addLayer("a", {
     },
     clickables: {
         11: {
-            canClick(){return hasMilestone("a",7)&&player.a.costmult.gt(1)},
+            canClick(){return true/*hasMilestone("a",7)&&player.a.costmult.gt(1)*/},
             display() {return `重置ap升级<br />这将会进行一次a转<br /><br />当前升级价格倍率:${format(player.a.costmult)}`},
             onClick(){if(confirm("你确定清除升级吗 这不会返还任何ap")){player.a.resetU = player.a.resetU.add(player.a.upgrades.length-1);player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)}}
         },
