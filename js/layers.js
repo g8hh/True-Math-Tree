@@ -14,19 +14,24 @@ function calcTickspeed(){
 }
 function getbp1(){
     var bp = new ExpantaNum(.0001)
-    bp = bp.root(layers.p.effect())
-    return bp.add(1)
+    bp = bp.root(layers.p.effect()).add(1)
+    bp = bp.mul(buyableEffect("a",11))
+    return bp
 }
 function geta(){
     var a = new ExpantaNum(3)
     if(!hasMilestone("a",2)) a = a.mul(layers.a.effect1())
     else a = ten.div(layers.a.effect1())
+    if(hasMilestone("a",14)) a = one
     return a.round().min(6).max(1)
 }
 function getMaxBP(){
     var cmax = new ExpantaNum(.5)
-    cmax = cmax.root(layers.a.effect2())
-    return cmax.add(1)
+    cmax = cmax.root(layers.a.effect2()).add(1)
+    cmax = cmax.mul(buyableEffect("a",11))
+    cmax = cmax.mul(buyableEffect("a",12))
+    cmax = powsoftcap(cmax,e(10000),e(5))
+    return cmax
 }
 function checkAroundUpg(UPGlayer,place){
     return hasUpgrade(UPGlayer,place-1)||hasUpgrade(UPGlayer,place+1)||hasUpgrade(UPGlayer,place-10)||hasUpgrade(UPGlayer,place+10)
@@ -213,11 +218,15 @@ addLayer("i", {
                 level = level.mul(buyableEffect("i",12))
                 var baseEff = player.points.mul(1e15).add(1).log10().pow(level.add(1).pow(0.5).sub(1)).sub(1).max(0)
                 if(player.points.gt(1)) baseEff = baseEff.mul(player.points.log10().add(1).pow(2))
+                baseEff = baseEff.pow(buyableEffect("i",13))
+                if(hasMilestone("a",20)) baseEff = baseEff.pow(2)
                 if(baseEff.gt(1e600)) baseEff = baseEff.cbrt().mul(1e400)
                 if(baseEff.gt(1e1000)){
                     var sc = 5
                     baseEff = baseEff.root(sc).mul(1e1000**(1-1/sc))
                 }
+                baseEff = powsoftcap(baseEff,e("e3000"),e(3))
+                baseEff = powsoftcap(baseEff,e("e400000"),e(5))
                 return baseEff
             },
             unlocked(){return true},
@@ -239,7 +248,7 @@ addLayer("i", {
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             buyMax(){
-                var c = player.i.points.add(1).pow(2).log10().root(1.6).sub(getBuyableAmount(this.layer, this.id)).min(upgradeEffect("p",31).root(3)).floor().max(0)
+                var c = player.i.points.add(1).pow(2).log10().root(1.6).sub(4).sub(getBuyableAmount(this.layer, this.id)).min(upgradeEffect("p",31).root(3)).floor().max(0)
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
             },
             effect(){
@@ -250,6 +259,30 @@ addLayer("i", {
             abtick : 0,
             abdelay(){
                 return upgradeEffect("p",32)*10
+            }
+        },
+        13: {
+            cost(x) {
+                var c = ten.pow(x.add(30).pow(2.4)).root(3).sub(1)
+                return c
+            },
+            display() { return `指数增幅增量点产量.(增量^)<br />^${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}增量点<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
+            canAfford() { return player[this.layer].points.gte(this.cost().add(1))&&this.unlocked() },
+            buy() {
+                this.buyMax();
+            },
+            buyMax(){
+                var c = player.i.points.add(1).pow(3).log10().root(2.4).sub(29).sub(getBuyableAmount(this.layer, this.id)).floor().max(0)
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
+            },
+            effect(){
+                var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.25)
+                return baseEff
+            },
+            unlocked(){return hasUpgrade("a",33)},
+            abtick : 0,
+            abdelay(){
+                return 0
             }
         },
     },
@@ -274,7 +307,7 @@ addLayer("i", {
 
         //auto
         for(row=1;row<=1;row++){
-            for(col=1;col<=2;col++){
+            for(col=1;col<=3;col++){
                 layers[this.layer].buyables[row*10+col].abtick += diff
                 if(layers[this.layer].buyables[row*10+col].abtick >= layers[this.layer].buyables[row*10+col].abdelay() && layers[this.layer].buyables[row*10+col].unlocked()){
                     layers[this.layer].buyables[row*10+col].buy()
@@ -304,7 +337,12 @@ addLayer("i", {
     hotkeys: [
         {key: "+", description: "+: 购买增量+", onPress(){if (layers.i.buyables[11].canAfford()) layers.i.buyables[11].buy()}},
         {key: "x", description: "x: 购买增量x", onPress(){if (layers.i.buyables[12].canAfford()) layers.i.buyables[12].buy()}},
-        {key: "i", description: "i: 购买所有增量", onPress(){if (layers.i.buyables[11].canAfford()) layers.i.buyables[11].buy();if (layers.i.buyables[12].canAfford()) layers.i.buyables[12].buy()}},
+        {key: "e", description: "e: 购买增量^", onPress(){if (layers.i.buyables[13].canAfford()) layers.i.buyables[13].buy()}},
+        {key: "i", description: "i: 购买所有增量", onPress(){
+            if (layers.i.buyables[11].canAfford()) layers.i.buyables[11].buy();
+            if (layers.i.buyables[12].canAfford()) layers.i.buyables[12].buy();
+            if (layers.i.buyables[13].canAfford()) layers.i.buyables[13].buy();
+        }},
     ],
 
 })
@@ -417,8 +455,14 @@ addLayer("p", {
                 if(hasUpgrade("p",23)) baseEff = baseEff.mul(upgradeEffect("p",23))
                 if(baseEff.gt(1e100)){
                     var sc = 4
+                    if(hasMilestone("a",14)) sc-=2
                     baseEff = baseEff.root(sc).mul(1e100**(1-1/sc))
                 }
+                if(baseEff.gt(1e10000)){
+                    var sc = 3
+                    baseEff = baseEff.root(sc).mul(1e10000**(1-1/sc))
+                }
+                if(baseEff.gt(1e50000)) baseEff = baseEff.log10().mul(2).pow(50000)
                 return baseEff
             },
             effectDisplay(){return `x${format(upgradeEffect("p",14),1)}`}
@@ -489,6 +533,7 @@ addLayer("p", {
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 baseEff = baseEff.mul(buyableEffect("p",12))
                 if(baseEff.gt(2.5)) baseEff = baseEff.sqrt().mul(2.5**0.5)
+                if(baseEff.gt(36)) baseEff = baseEff.pow(0.2).mul(36**0.8)
                 return baseEff.add(1)
             },
             effectDisplay(){return `^${format(upgradeEffect("p",24),2)}`}
@@ -500,7 +545,8 @@ addLayer("p", {
             effect(){
                 var baseEff = new ExpantaNum(1)
                 baseEff = baseEff.mul(buyableEffect("p",11))
-                if(baseEff.gt(3)) baseEff = baseEff.pow(0.2).mul(3**0.8)
+                if(baseEff.gt(3)) baseEff = baseEff.add(17).div(2).log10().mul(3)
+                if(baseEff.gt(4)) baseEff = baseEff.div(2).add(2)
                 return baseEff
             },
             effectDisplay(){return `解锁${format(upgradeEffect("p",25),1)}个`}
@@ -512,7 +558,7 @@ addLayer("p", {
             effect(){
                 var baseEff = new ExpantaNum(3)
                 if(hasUpgrade("p",33)) baseEff = baseEff.mul(upgradeEffect("p",33))
-                if(hasMilestone("a",6)) baseEff = baseEff.mul(3)
+                if(hasMilestone("a",6)) baseEff = baseEff.mul(3.14)
                 if(hasMilestone("a",12)) baseEff = baseEff.mul(10)
                 return baseEff
             },
@@ -526,7 +572,7 @@ addLayer("p", {
                 var baseEff = 1
                 if(!hasUpgrade("p",32)) baseEff = 1.797e308
                 if(hasUpgrade("p",33)) baseEff /= upgradeEffect("p",33).toNumber()
-                if(hasMilestone("a",6)) baseEff /= 3
+                if(hasMilestone("a",6)) baseEff /= 3.14
                 if(hasMilestone("a",12)) baseEff /=10
                 return baseEff
             },
@@ -538,8 +584,9 @@ addLayer("p", {
             unlocked(){return hasUpgrade("p",32)&&hasMilestone("a",0)},
             effect(){
                 var baseEff = buyableEffect("p",11).mul(buyableEffect("p",12))
-                if(hasMilestone("a",6)) baseEff = baseEff.mul(3)
+                if(hasMilestone("a",6)) baseEff = baseEff.mul(3.14)
                 if(hasMilestone("a",12)) baseEff = baseEff.mul(10)
+                baseEff = baseEff.pow(buyableEffect("p",21))
                 return baseEff
             },
             effectDisplay(){return `x${format(upgradeEffect("p",33),1)}`}
@@ -551,8 +598,10 @@ addLayer("p", {
             effect(){
                 var baseEff = new ExpantaNum(3)
                 if(hasUpgrade("p",35)) baseEff = baseEff.mul(upgradeEffect("p",33))
-                if(hasMilestone("a",6)) baseEff = baseEff.mul(3)
+                if(hasMilestone("a",17)) baseEff = baseEff.mul(buyableEffect("a",11))
+                if(hasMilestone("a",6)) baseEff = baseEff.mul(3.14)
                 if(hasMilestone("a",12)) baseEff = baseEff.mul(10)
+                if(hasUpgrade("a",32)) baseEff = baseEff.pow(1.5)
                 return baseEff
             },
             effectDisplay(){return `+${format(upgradeEffect("p",34),1)}`}
@@ -565,7 +614,7 @@ addLayer("p", {
                 var baseEff = new ExpantaNum(5)
                 if(!hasUpgrade("p",35)) baseEff = 1.797e308
                 baseEff /= upgradeEffect("p",33).toNumber()
-                if(hasMilestone("a",6)) baseEff /= 3
+                if(hasMilestone("a",6)) baseEff /= 3.14
                 if(hasMilestone("a",12)) baseEff /=10
                 return baseEff
             },
@@ -595,6 +644,7 @@ addLayer("p", {
                 var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.25)
                 if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
                 if(baseEff.gt(10)) baseEff = baseEff.pow(0.3333).mul(10**0.6666)
+                if(baseEff.gt(25)) baseEff = baseEff.pow(0.5).mul(5)
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(1)},
@@ -624,6 +674,7 @@ addLayer("p", {
             effect(){
                 var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.2)
                 if(baseEff.gt(5)) baseEff = baseEff.pow(0.3333).mul(5**0.6666)
+                if(baseEff.gt(25)) baseEff = baseEff.pow(0.15).mul(25**0.85)
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(2)},
@@ -652,9 +703,40 @@ addLayer("p", {
             },
             effect(){
                 var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.1)
+                if(baseEff.gt(25)) baseEff = baseEff.pow(0.25).mul(25**0.75)
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(3)},
+            abtick:0,
+            abdelay(){
+                return upgradeEffect("p",35)
+            }
+        },
+        21: {
+            cost(x) {
+                var c = new OmegaNum(1.797e308).pow(x.add(1).root(16).sub(1))
+                if(hasUpgrade("p",35)) c = c.root(1.25)
+                return c
+            },
+            display() { return `指数增幅p33效果.<br />^${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}pp<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
+            canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
+            buy() {
+                if(hasUpgrade("p",34)){this.buyMax();return}
+                player[this.layer].points = player[this.layer].points.sub(this.cost())
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+            },
+            buyMax(){
+                var p = hasUpgrade("p",35)? player.p.points.pow(1.25) : player.p.points
+                var c = p.logBase(1.797e308).add(1).pow(16).sub(getBuyableAmount(this.layer, this.id)).min(upgradeEffect("p",34)).floor().max(0)
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
+            },
+            effect(){
+                var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.1)
+                if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
+                if(baseEff.gt(5)) baseEff = baseEff.pow(0.3333).mul(5**0.6666)
+                return baseEff
+            },
+            unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(4)},
             abtick:0,
             abdelay(){
                 return upgradeEffect("p",35)
@@ -678,13 +760,14 @@ addLayer("p", {
     //important!!!
     update(diff){
         //auto
-        for(row=1;row<=1;row++){
+        for(row=1;row<=2;row++){
             for(col=1;col<=3;col++){
+                if(layers[this.layer].buyables[row*10+col]){
                 layers[this.layer].buyables[row*10+col].abtick += diff
                 if(layers[this.layer].buyables[row*10+col].abtick >= layers[this.layer].buyables[row*10+col].abdelay() && layers[this.layer].buyables[row*10+col].unlocked()){
                     layers[this.layer].buyables[row*10+col].buy()
                     layers[this.layer].buyables[row*10+col].abtick = 0
-                }
+                }}
             }
         }
     },
@@ -698,6 +781,7 @@ addLayer("p", {
             if(hasUpgrade("a",21)) sc-=1
             gain = gain.root(sc).mul(1e20**(1-1/sc))
         }
+        gain = powsoftcap(gain,e(hasUpgrade("a",34)?1e100:1e75),e(5))
         return gain.floor()
     },
     prestigeButtonText(){
@@ -727,6 +811,7 @@ function getAPlimit(){
     if(hasMilestone("a",8)) limit = limit.pow((player.a.upgrades.length/5)**2+1)
     if(hasUpgrade("a",11)) limit = limit.mul(upgradeEffect("a",11))
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
+    limit = limit.mul(buyableEffect("a",11))
     if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
     return limit.floor()
 }
@@ -739,6 +824,11 @@ function AUMilestonekeep(){
     if(hasMilestone("a",12)) kp.push(12)
     return kp
 }
+function getResetUGain(){
+    var resetUgain = Math.max(player.a.upgrades.length-1,0)
+    if(hasMilestone("a",16)) resetUgain = resetUgain**1.5
+    return Math.floor(resetUgain)
+}
 
 addLayer("a", {
     name: "arrow", // This is optional, only used in a few places, If absent it just uses the layer id.
@@ -749,6 +839,7 @@ addLayer("a", {
 		points: new ExpantaNum(0),
         costmult: new ExpantaNum(1),
         pointbest: new ExpantaNum(0),
+        ppbest: new ExpantaNum(0),
         resetU: new ExpantaNum(0),
         resetUsetting: false
     }},
@@ -809,7 +900,7 @@ addLayer("a", {
         return eff
     },
     effectDescription(){
-        var eff0 = `<br>你已经重置了${player.a.resetU}个ap升级(ap升级13不计入)<br>你的最佳ap为${format(player.a.best,0)}<br>你的ap上限为${format(getAPlimit(),0)}.`
+        var eff0 = `<br>你已经重置了${player.a.resetU.toFixed(0)}个ap升级(ap升级13不计入)<br>你的最佳ap为${format(player.a.best,0)}<br>你的ap上限为${format(getAPlimit(),0)}.`
         if(!hasMilestone("a",7)) eff0 = ``
         var eff1 = `<br>a -> Min(round(a*<text style = "color:green">${format(this.effect1(),2)}</text>),10)`
         if(hasMilestone("a",2)) eff1 = `<br>a -> Max(round(10/<text style = "color:green">${format(this.effect1(),2)}</text>),1)`
@@ -828,19 +919,23 @@ addLayer("a", {
         11: {
             canClick(){return true/*hasMilestone("a",7)&&player.a.costmult.gt(1)*/},
             display() {return `重置ap升级<br />这将会进行一次a转<br /><br />当前升级价格倍率:${format(player.a.costmult)}`},
-            onClick(){
+            onClick(){                    
+                var resetgain = getResetUGain()
+
                 if(player.a.resetUsetting){
-                    player.a.resetU = player.a.resetU.add(player.a.upgrades.length-1);player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)
+                    player.a.resetU = player.a.resetU.add(resetgain);
+                    player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)
                     return
                 }
                 if(confirm("你确定清除升级吗 这不会返还任何ap")){
-                    player.a.resetU = player.a.resetU.add(player.a.upgrades.length-1);player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)
+                    player.a.resetU = player.a.resetU.add(resetgain);
+                    player.a.upgrades=[];player.a.points=player.a.points.max(e(50));player.a.costmult=new ExpantaNum(1);doReset(this.layer)
                 }
             }
         },
         12: {
             canClick(){return true/*hasMilestone("a",7)&&player.a.costmult.gt(1)*/},
-            display() {return `是否禁用重置ap升级的弹窗<br /><br />当前状态:${player.a.resetUsetting?"是":"否"}`},
+            display() {return `是否禁用重置ap升级的确认框<br /><br />当前状态:${player.a.resetUsetting?"是":"否"}`},
             onClick(){player.a.resetUsetting=!player.a.resetUsetting}
         },
     },
@@ -852,6 +947,7 @@ addLayer("a", {
             unlocked(){return checkAroundUpg("a",11)},
             effect(){
                 var baseEff = player.a.pointbest.add(1).log10().add(1).log10().pow(2)
+                if(hasUpgrade("a",31)) baseEff = baseEff.pow(upgradeEffect("a",31))
                 //sc
                 //if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
                 return baseEff
@@ -860,6 +956,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -887,6 +984,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -914,6 +1012,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -941,6 +1040,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -968,6 +1068,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -995,6 +1096,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1022,12 +1124,13 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
         23: {
-            description: `你每秒获得1000%的pp.<br><br>价格增长倍率:x1.25.`,
+            description: `你每秒获得1000%的pp.<br><br>价格增长倍率:x1.`,
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
             costinc(){return 1},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",23)},
@@ -1049,6 +1152,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1068,6 +1172,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1095,42 +1200,34 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
         31: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",31)},
-            /*effect(){
-                var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
-                baseEff = baseEff.mul(buyableEffect("p",11))
-                baseEff = baseEff.mul(buyableEffect("p",12))
-                //sc
-                if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
-                if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
-                if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
-                //p22:sin to p11
-                if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
+            description: `最佳ap优化au11.<br><br>价格增长倍率:x25.`,
+            cost(){return new OmegaNum("1024").mul(player.a.costmult)},
+            costinc(){return 25},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",31)&&hasMilestone("a",13)},
+            effect(){
+                var baseEff = player.a.best.pow(0.06)
                 return baseEff
             },
-            effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}*/
+            effectDisplay(){return `^${format(upgradeEffect("a",31),1)}`},
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
         32: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
+            description: `p34效果^1.5.<br><br>价格增长倍率:x25.`,
+            cost(){return new OmegaNum("128").mul(player.a.costmult)},
             costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",32)},
+            unlocked(){return checkAroundUpg("a",32)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
@@ -1149,15 +1246,16 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
         33: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",33)},
+            description: `解锁增量^.自动购买最大.<br><br>价格增长倍率:x25.`,
+            cost(){return new OmegaNum("1024").mul(player.a.costmult)},
+            costinc(){return 25},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",33)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
@@ -1176,15 +1274,16 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
         34: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",34)},
+            description: `延迟pp的1e75软上限至1e100.<br><br>价格增长倍率:x10.`,
+            cost(){return new OmegaNum("1024").mul(player.a.costmult)},
+            costinc(){return 10},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",34)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
@@ -1203,15 +1302,16 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
         35: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",35)},
+            description: `解锁新的ap里程碑.里程碑完成后仍然保留.购买时重置最佳ap.<br><br>价格增长倍率:x1024.`,
+            cost(){return new OmegaNum("10086").mul(player.a.costmult)},
+            costinc(){return 1024},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",35)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
@@ -1230,6 +1330,8 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.a.best=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1257,6 +1359,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1284,6 +1387,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1311,6 +1415,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1338,6 +1443,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
@@ -1365,28 +1471,82 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
             },
         },
     },
     buyables: {
-        /*
         11: {
-            cost(x) { return new OmegaNum(1.797e308).pow(x.add(1).root(125).sub(1)) },
-            display() { return `倍增前10个升级效果.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}pp<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
+            cost(x) {
+                var c = two.pow(x.add(40).pow(1.2)).root(3).sub(1)
+                if(hasMilestone("a",18)) c = c.root(1.1)
+                if(hasMilestone("a",19)) c = c.root(1.1)
+                return c
+            },
+            display() { return `基于最高pp倍增b和cmax.这同时影响ap上限.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}ap<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
             canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
             buy() {
+                //if(hasUpgrade("p",34)){this.buyMax();return}
                 player[this.layer].points = player[this.layer].points.sub(this.cost())
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
-            effect(){
-                var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.25)
-                return baseEff
+            buyMax(){
+                var basep = player.i.points
+                if(hasMilestone("a",18)) basep = basep.pow(1.1)
+                if(hasMilestone("a",19)) basep = basep.pow(1.1)
+                var c = basep.add(1).pow(3).logBase(2).root(1.2).sub(40).sub(getBuyableAmount(this.layer, this.id)).add(1).min(1/*upgradeEffect("p",31)*/).floor().max(0)
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
             },
-            unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(1)}
+            effect(){
+                var baseEff = player.a.ppbest.add(1).log10().div(200).add(1).pow(getBuyableAmount(this.layer,this.id).pow(0.33))
+                baseEff = baseEff.mul(buyableEffect("a",12))
+                if(hasMilestone("a",14)) baseEff = baseEff.pow(2)
+                //if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
+                if(this.unlocked()) return baseEff
+                return new ExpantaNum(1)
+            },
+            unlocked(){return hasMilestone("a",14)&&geta().eq(1)},
+            abtick:0,
+            abdelay(){
+                return 1.797e308
+            }
         },
-        */
+        12: {
+            cost(x) {
+                var c = two.pow(x.add(35).pow(1.35)).root(4).sub(1)
+                if(hasMilestone("a",18)) c = c.root(1.1)
+                if(hasMilestone("a",19)) c = c.root(1.1)
+                return c
+            },
+            display() { return `基于ap倍增cmax.这同时影响上一个ap可重复购买项.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}ap<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
+            canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
+            buy() {
+                //if(hasUpgrade("p",34)){this.buyMax();return}
+                player[this.layer].points = player[this.layer].points.sub(this.cost())
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
+            },
+            buyMax(){
+                var basep = player.i.points
+                if(hasMilestone("a",18)) basep = basep.pow(1.1)
+                if(hasMilestone("a",19)) basep = basep.pow(1.1)
+                var c = basep.add(1).pow(4).logBase(2).root(1.35).sub(35).sub(getBuyableAmount(this.layer, this.id)).add(1).min(1/*upgradeEffect("p",31)*/).floor().max(0)
+                setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
+            },
+            effect(){
+                var baseEff = player.a.points.add(1).log10().div(20).add(1).pow(getBuyableAmount(this.layer,this.id).pow(0.25))
+                if(hasMilestone("a",14)) baseEff = baseEff.pow(2)
+                //if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
+                if(this.unlocked()) return baseEff
+                return new ExpantaNum(1)
+            },
+            unlocked(){return hasMilestone("a",14)&&geta().eq(1)},
+            abtick:0,
+            abdelay(){
+                return 1.797e308
+            }
+        },
     },
 
     /*
@@ -1406,11 +1566,12 @@ addLayer("a", {
     update(diff){    
         player.a.points = player.a.points.min(getAPlimit().floor())
         player.a.pointbest = player.points.max(player.a.pointbest)
+        player.a.ppbest = player.p.points.max(player.a.ppbest)
     },
     milestones: {
         0: {
             requirementDescription: "1:3ap",
-            effectDescription: "解锁增量+.解锁新的p转升级.pp基于c的获取指数/2,改善p11公式,高德纳箭头要求提升至e10但获取指数更高(^0.125->0.1825),时间速率x5,ap对p的加成x10",
+            effectDescription: "解锁增量+.解锁新的p转升级.pp基于c的获取指数/2,改善p11公式,高德纳箭头要求提升至e10但获取指数更高(^0.125->0.1875),时间速率x5,ap对p的加成x10",
             done() { return player.a.points.gte(3) }
         },
         1: {
@@ -1445,7 +1606,7 @@ addLayer("a", {
         },
         6: {
             requirementDescription: "7:40ap",
-            effectDescription: "最后一排升级的效率x3.",
+            effectDescription: "最后一排升级的效率x3.14.",
             done() { return player.a.points.gte(40) },
             unlocked(){return hasMilestone("a",5)},
         },
@@ -1457,7 +1618,7 @@ addLayer("a", {
         },
         8: {
             requirementDescription: "9:2au",
-            effectDescription: "ap上限基于au增加.",
+            effectDescription: "ap上限基于au增加.( = 50^((au/5)^2+1) )",
             done() { return player.a.upgrades.length >= 2 },
             unlocked(){return hasMilestone("a",7)},
         },
@@ -1485,12 +1646,65 @@ addLayer("a", {
             done() { return player.a.points.gte(10000) },
             unlocked(){return hasMilestone("a",10)},
         },
-        //13: {
-        //    requirementDescription: "14:10au",
-        //    effectDescription: "被重置的au加成ap获取.加成的量等同于au24的立方根.(无论你是否购买au24)",
-        //    done() { return player.a.upgrades.length >= 10 },
-        //    unlocked(){return hasMilestone("a",11)},
-        //},
+        13: {
+            requirementDescription: "14:10au",
+            effectDescription: "被重置的au加成ap获取.加成的量等同于au24的立方根.(无论你是否购买au24).允许购买第三行ap升级.",
+            done() { return player.a.upgrades.length >= 10 },
+            unlocked(){return hasMilestone("a",11)},
+        },
+        14: {
+            requirementDescription: "15:2.5e9ap",
+            effectDescription: "解锁两个ap可购买项.箭头数强制等于1.",
+            done() { return player.a.upgrades.length >= 10 },
+            unlocked(){return hasMilestone("a",12)},
+        },
+        15: {
+            requirementDescription: "16:可购买项11达到6级",
+            effectDescription: "可购买项的效果^2.减弱p14的e100软上限.(^0.25->^0.5)",
+            done() { return player.a.buyables[11].gte(6) },
+            unlocked(){return hasMilestone("a",13)},
+        },
+        16: {
+            requirementDescription: "17:购买升级35",
+            effectDescription: "被重置的升级获取量基于重置时你拥有的升级数获得加成.(*(x-1)^0.5)",
+            done() { return hasUpgrade("a",35) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        17: {
+            requirementDescription: "18:购买升级35的同时获得256 000 000ap",
+            effectDescription: "点数的e4000软上限减弱.(^0.2 -> ^0.25).ap可购买项11加成p34.",
+            done() { return hasUpgrade("a",35)&&player.a.points.gte(256000000) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        18: {
+            requirementDescription: "19:购买升级35的同时获得512 000 000ap",
+            effectDescription: "ap可购买项的价格变为原来的1.1次根.",
+            done() { return hasUpgrade("a",35)&&player.a.points.gte(512000000) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        19: {
+            requirementDescription: "20:购买升级35的同时获得e12800P.",
+            effectDescription: "ap可购买项的价格变为原来的1.1次根.",
+            done() { return hasUpgrade("a",35)&&player.points.gte("e12000") },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        20: {
+            requirementDescription: "21:e44000P.",
+            effectDescription: "你每秒获得10%的ap.增量点获取^2.",
+            done() { return player.points.gte("e44000") },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        21: {
+            requirementDescription: "22:7.5e10AP + e70,000P.",
+            effectDescription: "你每秒获得100%的ap.",
+            done() { return player.points.gte("e70000")&&player.a.points.gte(7.5e10) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+    },
+    passiveGeneration(){
+        if(hasMilestone("a",21)) return 1
+        if(hasMilestone("a",20)) return 0.1
+        return 0
     },
     getResetGain(){
         var gain = new ExpantaNum(1)
@@ -1550,6 +1764,33 @@ addLayer("a", {
                 //}],
                 "clickables",// "resource-display",
                 "upgrades",
+                //["blank", "5px"], // Height
+                //"h-line",
+                //["display-text", function() {return "增益升级"}],
+                //["blank", "5px"],
+                //"buyables",
+                //["blank", "5px"], // Height
+                //"h-line",
+                //["display-text", function() {return "减益升级"}],
+                //"upgrades",
+                ],},
+        AP购买项: {
+            buttonStyle() {return  {'color': 'lightblue'}},
+            unlocked() {return hasMilestone("a",14)},
+            content:
+                ["main-display",
+                //["display-text", function() {
+                //    var basestr = "你的增益点为 "+HARDformat(player.v.buffp)+" / "+HARDformat(player.v.points)
+                //    if(player.v.buffp.gt(player.v.points)) basestr+=` <warning style="color:red";>(WARNING:增益点大于上限!)</warning>`
+                //    return basestr
+                //}],
+                //["display-text", function() {
+                //    var basestr = "你的减益点为 "+HARDformat(player.v.nerfp)+" / "+HARDformat(player.v.points)
+                //    if(player.v.nerfp.lt(player.v.points)) basestr+=` <warning style="color:red">(WARNING:减益点未达到目标!你的游戏暂停!)</warning>`
+                //   return basestr
+                //}],
+                //"clickables",// "resource-display",
+                "buyables",
                 //["blank", "5px"], // Height
                 //"h-line",
                 //["display-text", function() {return "增益升级"}],
