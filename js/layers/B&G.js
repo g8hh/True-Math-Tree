@@ -374,7 +374,7 @@ addLayer("g", {
         4: {
             requirementDescription: "6发生器",
             effectDescription: "b层级不再重置任何东西.每秒获得100%的倍增器.",
-            done() { return player.g.points.gte(5) }
+            done() { return player.g.points.gte(6) }
         },
     },
     canBuyMax(){return hasMilestone("g",3)},
