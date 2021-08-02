@@ -905,7 +905,7 @@ addLayer("a", {
         },
         23: {
             requirementDescription: "24:e100,000P.",
-            effectDescription: "ap可重复购买项12加成p可重复购买项11.(无视软上限)",
+            effectDescription: "ap可重复购买项12加成p可重复购买项11.(无视软上限)解锁新节点.",
             done() { return player.points.gte("e100000") },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
