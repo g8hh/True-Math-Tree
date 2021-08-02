@@ -450,7 +450,7 @@ addLayer("p", {
         return 0
     },
     doReset(layer){
-        if(layer != "i"){
+        if(layer != "i" && layer != "p"){
             if(layer == "b" && hasMilestone("g",2)) return
             var kp = []
             if(hasMilestone("a",4)) kp.push("upgrades")
