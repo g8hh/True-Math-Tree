@@ -121,6 +121,7 @@ addLayer("b", {
 
     //important!!!
     update(diff){
+        if(hasMilestone("g",4)) player.b.points = player.b.points.add(this.getResetGain().mul(Math.min(diff,1)))
         //var incproc = buyableEffect("i",11)
         //player.i.points = player.i.points.add(incproc.mul(diff).mul(player.c.tickspeed)).max(1)
 
@@ -153,10 +154,6 @@ addLayer("b", {
     },
     canBuyMax(){return hasMilestone("b",0)},
     resetsNothing(){return hasMilestone("g",4)},
-    passiveGeneration(){
-        if(hasMilestone("g",4)) return 1
-        return 0
-    },
     /*
     getResetGain(){
         var gain = new ExpantaNum(1)
@@ -177,7 +174,7 @@ addLayer("b", {
         var base = this.base
         if(!this.base) base = new ExpantaNum(2)
         if(this.baseAmount().lt(this.requires())) return new ExpantaNum(0)
-        var gain = this.baseAmount().pow(this.gainExp()).mul(this.gainMult()).div(this.requires()).logBase(this.base).add(1).root(this.exponent).sub(player[this.layer].points).floor().max(0)
+        var gain = this.baseAmount().pow(this.gainExp()).mul(this.gainMult()).div(this.requires()).logBase(this.base).root(this.exponent).add(1).sub(player[this.layer].points).floor().max(0)
         if(!this.canBuyMax()) return new ExpantaNum(1)
         return gain
         /*
@@ -231,9 +228,9 @@ addLayer("g", {
     branches:["p"],
     layerShown(){return hasMilestone("a",23)},
     proc(){
-        var eff = player[this.layer].points.add(1).pow(0.25).sub(1)
-        //if(eff.gte(4)) eff = eff.sqrt().mul(2)
-        return eff
+        var eff = player[this.layer].points.add(1).pow(0.25)
+        if(hasUpgrade("p",44)) eff = eff.pow(upgradeEffect("p",44))
+        return eff.sub(1)
     },
     effect(){
         var eff = two.pow(player[this.layer].power.root(3))
@@ -398,7 +395,7 @@ addLayer("g", {
             var base = this.base
             if(!this.base) base = new ExpantaNum(2)
             if(this.baseAmount().lt(this.requires())) return new ExpantaNum(0)
-            var gain = this.baseAmount().div(this.requires()).logBase(this.base).add(1).root(this.exponent).sub(player[this.layer].points).floor().max(0)
+            var gain = this.baseAmount().div(this.requires()).logBase(base).root(this.exponent).add(1).sub(player[this.layer].points).floor().max(0)
             if(!this.canBuyMax() && gain.gte(1)) return new ExpantaNum(1)
             return gain
             /*
