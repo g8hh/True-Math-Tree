@@ -23,8 +23,8 @@ function AUMilestonekeep(){
 }
 function getResetUGain(){
     var resetUgain = Math.max(player.a.upgrades.length-1,0)
-    if(hasMilestone("a",13)) resetUgain = resetUgain**1.5
-    if(hasMilestone("a",16)) resetUgain = resetUgain**1.5
+    if(hasMilestone("a",13)) resetUgain = resetUgain**2
+    if(hasMilestone("a",16)) resetUgain = resetUgain**1.25
     resetUgain = new OmegaNum(resetUgain)
     if(hasMilestone("a",21)) resetUgain = resetUgain.mul(player.a.points.add(10).log10().pow(0.75))
     return resetUgain.floor()
@@ -864,7 +864,7 @@ addLayer("a", {
         },
         13: {
             requirementDescription: "14:10au",
-            effectDescription: "被重置的au加成ap获取.加成的量等同于au24的立方根.(无论你是否购买au24).允许购买第三行ap升级.被重置的升级数获取^1.5.(最先计算)",
+            effectDescription: "被重置的au加成ap获取.加成的量等同于au24的立方根.(无论你是否购买au24).允许购买第三行ap升级.被重置的升级数获取^2.(最先计算)",
             done() { return player.a.upgrades.length >= 10 },
             unlocked(){return hasMilestone("a",11)},
         },
@@ -882,7 +882,7 @@ addLayer("a", {
         },
         16: {
             requirementDescription: "17:购买升级35",
-            effectDescription: "被重置的升级获取量基于重置时你拥有的升级数获得加成.(*(x-1)^0.5)",
+            effectDescription: "被重置的升级获取量基于重置时你拥有的升级数获得加成.(*(x-1)^0.25)",
             done() { return hasUpgrade("a",35) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },

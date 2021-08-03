@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.9",
+	num: "0.91",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.91</h3><br>
+		- 又一次平衡,改正endgame为: 约e2 000 000点数,e7 459 000增量点,e1310pp,3e20高德纳箭头点.<br><br>
 	<h3>v0.9</h3><br>
 		- 添加ap挑战,四个p升级,两个ap里程碑,成吨的log级软上限(?),重新平衡部分内容,当前endgame:约e1 485 000点数,e7 447 800增量点,e1290pp,4e16高德纳箭头点.<br><br>
 	<h3>v0.81</h3><br>
@@ -113,12 +115,12 @@ var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率(ts) = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:约e1 485 000点数,e7 447 800增量点,e1290pp,4e16高德纳箭头点.`},
+	function(){return `当前endgame:约e2 000 000点数,e7 459 000增量点,e1310pp,3e20高德纳箭头点.`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("1e1485000")&&player.i.points.gte("1e7447800")&&player.p.points.gte("e1290")&&player.a.points.gte(4e16)
+	return player.points.gte("1e2000000")&&player.i.points.gte("1e7459000")&&player.p.points.gte("e1310")&&player.a.points.gte(3e20)
 }
 
 
