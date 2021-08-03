@@ -8,6 +8,7 @@ function getAPlimit(){
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
     limit = limit.mul(buyableEffect("a",11))
     if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
+    if(limit.gt(1e20)) limit = limit.log10().pow(15.37)
     return limit.floor()
 }
 function AUMilestonekeep(){
@@ -17,14 +18,31 @@ function AUMilestonekeep(){
     if(hasMilestone("a",9)) kp.push(9)
     if(hasMilestone("a",10)) kp.push(10)
     if(hasMilestone("a",12)) kp.push(12)
+    if(hasMilestone("a",24)) kp.push(24)
     return kp
 }
 function getResetUGain(){
     var resetUgain = Math.max(player.a.upgrades.length-1,0)
+    if(hasMilestone("a",13)) resetUgain = resetUgain**1.5
     if(hasMilestone("a",16)) resetUgain = resetUgain**1.5
     resetUgain = new OmegaNum(resetUgain)
     if(hasMilestone("a",21)) resetUgain = resetUgain.mul(player.a.points.add(10).log10().pow(0.75))
     return resetUgain.floor()
+}
+
+function doACreset(){
+    var kp = [0,7,24]
+    player.a.milestones = kp
+    for(i=2;i>=0;i--) rowReset(i,"a")
+    player.points = zero
+    player.a.points = zero
+    player.a.pointbest = zero
+    player.a.ppbest = zero
+    player.a.upgrades = []
+    player.a.resetU = zero
+    player.a.costmult = one
+    player.a.buyables[11] = zero
+    player.a.buyables[12] = zero
 }
 
 addLayer("a", {
@@ -114,7 +132,7 @@ addLayer("a", {
     },
     clickables: {
         11: {
-            canClick(){return true/*hasMilestone("a",7)&&player.a.costmult.gt(1)*/},
+            canClick(){return hasMilestone("a",7)&&getResetUGain().gte(1)},
             display() {return `重置ap升级<br />这将会进行一次a转,并获得${format(getResetUGain(),0)}被重置的升级(RAU)<br /><br />当前升级价格倍率:${format(player.a.costmult)}`},
             onClick(){                    
                 var resetgain = getResetUGain()
@@ -527,7 +545,7 @@ addLayer("a", {
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
-                player.a.best=new OmegaNum(0);
+                if(!hasMilestone("a",24)) player.a.best=new OmegaNum(0);
                 player.points=new OmegaNum(0)
                 for (let x = 2; x >= 0; x--) rowReset(x, "a")
                 player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
@@ -746,24 +764,25 @@ addLayer("a", {
         },
     },
 
-    /*
     challenges: {
         11: {
-            name: "AntiLooperrrr",
-            challengeDescription: "因为挑战出了bug，devU13被禁用了。刷新后的第一帧时间计数x100。",
-            canComplete(){return player.points.gte(1e10)},
-            goalDescription(){return format(ExpantaNum(1e10))+"点数"},
-            rewardDisplay(){return `你永远保留dev11的效果，同时“刷新后的第一帧时间计数x100。”被保留。`},
-            unlocked(){return hasUpgrade("dev",15)}
+            name: "增量致胜",
+            challengeDescription: "点数获取^0.33.增量点^1.5,增量点效果^3.添加新的升级.",
+            canComplete(){return player.points.gte("e351000")},
+            goalDescription(){return format(ExpantaNum("e351000"))+"点数"},
+            rewardDisplay(){return `保留该挑战的所有增益.`},
+            unlocked(){return hasMilestone("a",24)},
+            onEnter(){doACreset()},
+            onExit(){player.a.activeChallenge = 11}
         },
     },
-    */
 
     //important!!!
     update(diff){    
         player.a.points = player.a.points.min(getAPlimit().floor())
         player.a.pointbest = player.points.max(player.a.pointbest)
         player.a.ppbest = player.p.points.max(player.a.ppbest)
+        if(hasMilestone("a",24)) player.a.points = player.a.points.max(3)
     },
     milestones: {
         0: {
@@ -845,7 +864,7 @@ addLayer("a", {
         },
         13: {
             requirementDescription: "14:10au",
-            effectDescription: "被重置的au加成ap获取.加成的量等同于au24的立方根.(无论你是否购买au24).允许购买第三行ap升级.",
+            effectDescription: "被重置的au加成ap获取.加成的量等同于au24的立方根.(无论你是否购买au24).允许购买第三行ap升级.被重置的升级数获取^1.5.(最先计算)",
             done() { return player.a.upgrades.length >= 10 },
             unlocked(){return hasMilestone("a",11)},
         },
@@ -863,7 +882,7 @@ addLayer("a", {
         },
         16: {
             requirementDescription: "17:购买升级35",
-            effectDescription: "被重置的升级获取量基于重置时你拥有的升级数获得加成.(*(x-1)^0.75)",
+            effectDescription: "被重置的升级获取量基于重置时你拥有的升级数获得加成.(*(x-1)^0.5)",
             done() { return hasUpgrade("a",35) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
@@ -909,9 +928,21 @@ addLayer("a", {
             done() { return player.points.gte("e100000") },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
+        24: {
+            requirementDescription: "25:e900,000增量点+6发生器.",
+            effectDescription: "这树怎么能没有挑战?解锁ap挑战(ac) 进入挑战会重置你所有以前的进度,只保留最佳ap和0,8,25及25以后的里程碑.你的ap不再会低于3.购买au35不会重置最佳ap.",
+            done() { return player.i.points.gte("e900000") && player.g.points.gte(6) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        25: {
+            requirementDescription: "26:30发生器.&&e1 000 000P",
+            effectDescription: "p可重复购买项21的效果^0.5后加成p45.",
+            done() { return player.i.points.gte("e1000000") && player.g.points.gte(30) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
     },
     passiveGeneration(){
-        if(hasMilestone("a",21)) return 10
+        if(hasMilestone("a",22)) return 10
         if(hasMilestone("a",21)) return 1
         if(hasMilestone("a",20)) return 0.1
         return 0
@@ -1001,6 +1032,33 @@ addLayer("a", {
                 //}],
                 //"clickables",// "resource-display",
                 "buyables",
+                //["blank", "5px"], // Height
+                //"h-line",
+                //["display-text", function() {return "增益升级"}],
+                //["blank", "5px"],
+                //"buyables",
+                //["blank", "5px"], // Height
+                //"h-line",
+                //["display-text", function() {return "减益升级"}],
+                //"upgrades",
+                ],},
+        AP挑战表: {
+            buttonStyle() {return  {'color': 'lightblue'}},
+            unlocked() {return hasMilestone("a",24)},
+            content:
+                ["main-display",
+                //["display-text", function() {
+                //    var basestr = "你的增益点为 "+HARDformat(player.v.buffp)+" / "+HARDformat(player.v.points)
+                //    if(player.v.buffp.gt(player.v.points)) basestr+=` <warning style="color:red";>(WARNING:增益点大于上限!)</warning>`
+                //    return basestr
+                //}],
+                //["display-text", function() {
+                //    var basestr = "你的减益点为 "+HARDformat(player.v.nerfp)+" / "+HARDformat(player.v.points)
+                //    if(player.v.nerfp.lt(player.v.points)) basestr+=` <warning style="color:red">(WARNING:减益点未达到目标!你的游戏暂停!)</warning>`
+                //   return basestr
+                //}],
+                //"clickables",// "resource-display",
+                "challenges",
                 //["blank", "5px"], // Height
                 //"h-line",
                 //["display-text", function() {return "增益升级"}],

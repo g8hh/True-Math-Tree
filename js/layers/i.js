@@ -23,7 +23,7 @@ addLayer("i", {
     layerShown(){return hasMilestone("a",0)},
     effect(){
         var eff = player[this.layer].points.root(2)
-        //if(eff.gte(4)) eff = eff.sqrt().mul(2)
+        if(inChallenge("a",11) || hasChallenge("a",11)) eff = eff.pow(3)
         return eff
     },
     effectDescription(){return `P -> P*${format(this.effect())}`},
@@ -84,6 +84,7 @@ addLayer("i", {
                 if(player.points.gt(1)) baseEff = baseEff.mul(player.points.log10().add(1).pow(2))
                 baseEff = baseEff.pow(buyableEffect("i",13))
                 if(hasMilestone("a",20)) baseEff = baseEff.pow(2)
+                if(inChallenge("a",11) || hasChallenge("a",11)) baseEff = baseEff.pow(1.5)
                 if(baseEff.gt(1e600)) baseEff = baseEff.cbrt().mul(1e400)
                 if(baseEff.gt(1e1000)){
                     var sc = 5
@@ -91,6 +92,7 @@ addLayer("i", {
                 }
                 baseEff = powsoftcap(baseEff,e("e3000"),e(3))
                 baseEff = powsoftcap(baseEff,e("e400000"),e(5))
+                if(baseEff.gte("e1e6")) baseEff = baseEff.log10().mul(10/6).pow(1e6)
                 return baseEff
             },
             unlocked(){return true},

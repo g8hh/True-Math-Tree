@@ -7,16 +7,18 @@
 	discordLink: "",
 	initialStartPoints: new ExpantaNum (0), // Used for hard resets and new players
 	
-	offlineLimit: 10,  // In hours
+	offlineLimit: 0,  // In hours
 }
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.81",
+	num: "0.9",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v0.9</h3><br>
+		- 添加ap挑战,四个p升级,两个ap里程碑,成吨的log级软上限(?),重新平衡部分内容,当前endgame:约e1 485 000点数,e7 447 800增量点,e1290pp,4e16高德纳箭头点.<br><br>
 	<h3>v0.81</h3><br>
 		- 修复bug.<br><br>
 	<h3>v0.8</h3><br>
@@ -73,12 +75,18 @@ function canGenPoints(){
 function getPointGen() {
 	if(!canGenPoints) return new ExpantaNum(0)
 	var gain = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1).mul(player.c.tickspeed)
-	gain = gain.div(upgradeEffect("p",13))
+	
 	if(hasUpgrade("p",12)) gain = gain.mul(upgradeEffect("p",12))
 	if(hasUpgrade("p",14)) gain = gain.mul(upgradeEffect("p",14))
+	/*(if(hasUpgrade("p",42)) gain = gain.mul(upgradeEffect("p",42))
+	else*/ gain = gain.div(upgradeEffect("p",13))
+	
 	gain = gain.mul(layers.a.effect3())
 	gain = gain.mul(layers.i.effect())
 	if(hasMilestone("a",9)) gain = gain.pow(layers.a.effect5())
+	
+	if(inChallenge("a",11)) gain = gain.pow(0.33)
+
 	if(gain.gt(1e100)){
 		var sc = 4
 		if(hasUpgrade("a",12)) sc -= 1
@@ -91,6 +99,8 @@ function getPointGen() {
 	gain = powsoftcap(gain,e("e4000"),e(e4ksc))
 	gain = powsoftcap(gain,e("e20000"),e(4))
 	gain = powsoftcap(gain,e("e100000"),e(5))
+	//gain = powsoftcap(gain,e("e1000000"),e(3))
+	
 	return gain
 }
 
@@ -103,12 +113,12 @@ var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){return `时间速率(ts) = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:约e508500点数,e900000增量点,1e970pp,6e14高德纳箭头点.`},
+	function(){return `当前endgame:约e1 485 000点数,e7 447 800增量点,e1290pp,4e16高德纳箭头点.`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("1e508500")&&player.i.points.gte("1e900000")&&player.p.points.gte("1e970")&&player.a.points.gte(6e14)
+	return player.points.gte("1e1485000")&&player.i.points.gte("1e7447800")&&player.p.points.gte("e1290")&&player.a.points.gte(4e16)
 }
 
 
@@ -117,7 +127,7 @@ function isEndgame() {
 
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
-	return(0.1) // Default is 1 hour which is just arbitrarily large
+	return(3600) // Default is 1 hour which is just arbitrarily large
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,

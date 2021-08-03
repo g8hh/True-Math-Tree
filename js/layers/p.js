@@ -155,6 +155,7 @@ addLayer("p", {
                 var baseEff = upgradeEffect("p",21)
                 baseEff = baseEff.log10().add(1).pow(2)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
+                if(hasUpgrade("p",43)) baseEff = baseEff.pow(upgradeEffect("p",43))
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 baseEff = baseEff.mul(buyableEffect("p",12))
                 return baseEff
@@ -197,7 +198,7 @@ addLayer("p", {
                 var baseEff = new ExpantaNum(1)
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 if(baseEff.gt(3)) baseEff = baseEff.add(17).div(2).log10().mul(3)
-                if(baseEff.gt(4)) baseEff = baseEff.div(2).add(2)
+                if(baseEff.gt(4)) baseEff = baseEff.add(16).div(2).log10().mul(4)
                 return baseEff
             },
             effectDisplay(){return `解锁${format(upgradeEffect("p",25),1)}个`}
@@ -270,6 +271,61 @@ addLayer("p", {
                 return baseEff
             },
             effectDisplay(){return hasUpgrade("p",35)?`间隔${upgradeEffect("p",35).toFixed(2)}s(${(upgradeEffect("p",35)-(layers.p.buyables[11].abtick)).toFixed(2)}s)` : `间隔5s`}
+        },
+        41: {
+            description: "hello AC11.p22也加成时间速率.",
+            cost(){return new OmegaNum(1e8)},
+            unlocked(){return (inChallenge("a",11) || hasChallenge("a",11)) && hasUpgrade("p",35)},
+            effect(){
+                var baseEff = upgradeEffect("p",22)
+                if(hasUpgrade("p",45)) baseEff = baseEff.pow(upgradeEffect("p",45))
+                return baseEff
+            },
+            effectDisplay(){return `x${format(upgradeEffect("p",41),1)}`}
+        },
+        42: {
+            description: "hello AC11.反转并加强p13.",
+            cost(){return new OmegaNum(1e9)},
+            unlocked(){return (inChallenge("a",11) || hasChallenge("a",11)) && hasUpgrade("p",41)},
+            effect(){
+                var baseEff = upgradeEffect("p",13).pow(10)
+                if(hasUpgrade("p",45)) baseEff = baseEff.pow(upgradeEffect("p",45))
+                return baseEff
+            },
+            effectDisplay(){return `变为x${format(upgradeEffect("p",42),1)}`}
+        },
+        43: {
+            description: "hello AC11.p可购买项13以一定的效率加成p22.",
+            cost(){return new OmegaNum(1e200)},
+            unlocked(){return (inChallenge("a",11) || hasChallenge("a",11)) && hasUpgrade("p",42)},
+            effect(){
+                var baseEff = buyableEffect("p",13).pow(0.33)
+                if(hasUpgrade("p",45)) baseEff = baseEff.pow(upgradeEffect("p",45))
+                return baseEff
+            },
+            effectDisplay(){return `^${format(upgradeEffect("p",43),1)}`}
+        },
+        44: {
+            description: "hello AC11.发生器生产(x+1)^n-1的能量.(x = 原发生效率,n = 该升级效率)",
+            cost(){return new OmegaNum("1e989")},
+            unlocked(){return (inChallenge("a",11) || hasChallenge("a",11)) && hasUpgrade("p",43)},
+            effect(){
+                var baseEff = new ExpantaNum(4)
+                if(hasUpgrade("p",45)) baseEff = baseEff.pow(upgradeEffect("p",45))
+                return baseEff
+            },
+            effectDisplay(){return `^${format(upgradeEffect("p",44),2)}`}
+        },
+        45: {
+            description: "hello AC11.使p41-p44效果^1.2",
+            cost(){return new OmegaNum("1e990")},
+            unlocked(){return (inChallenge("a",11) || hasChallenge("a",11)) && hasUpgrade("p",44)},
+            effect(){
+                var baseEff = new ExpantaNum(1.2)
+                if(hasMilestone("a",25)) baseEff = baseEff.pow(buyableEffect("p",21).pow(0.5))
+                return baseEff
+            },
+            effectDisplay(){return `^${format(upgradeEffect("p",45),2)}`}
         },
 },
     buyables: {
