@@ -2,13 +2,16 @@ function calcTickspeed(){
     var tickspeed = new ExpantaNum(1)
     if(hasMilestone("a",0)) tickspeed = tickspeed.mul(5)
     if(hasUpgrade("p",21)) tickspeed = tickspeed.mul(upgradeEffect("p",21))
+    if(hasUpgrade("p",41)) tickspeed = tickspeed.mul(upgradeEffect("p",41))
     if(tickspeed.gte(1e18)){
         var sc = 3
         if(hasUpgrade("a",15)) sc = 1.25
         tickspeed = tickspeed.root(sc).mul(1e18**(1-1/sc))
     }
+    if(tickspeed.gte("e150000")) tickspeed = tickspeed.log10().div(15000).pow(150000)
     tickspeed = tickspeed.mul(layers.b.effect())
     tickspeed = tickspeed.mul(layers.g.effect())
+    tickspeed = powsoftcap(tickspeed,e("e200000"),e(5))
     return tickspeed
 }
 function getbp1(){
@@ -116,6 +119,7 @@ addLayer("c", {
         if(hasUpgrade("p",12)) points = points.mul(upgradeEffect("p",12))
         points = points.mul(layers.a.effect3())
         points = points.mul(layers.i.effect())
+        if(inChallenge("a",11)) points = points.pow(0.33)
         player.points = points
         }
     }

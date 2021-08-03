@@ -78,9 +78,9 @@ function format(decimal, precision = 2, small=false) {
   }
   else if(decimal.lt("10^^5")){
     let part1 = "e".repeat(egg(decimal.array[1])+1 - (decimal.gte(EN.E_MAX_SAFE_INTEGER)))
-    if(part1 != "e") {
+    if(part1 != "e" && decimal.gt("e9e15")) {
       decimal.array.pop()
-      return (part1+format(decimal)).substr(1)
+      return part1+format(decimal)
     }
     return "e"+format(decimal.log10())
   }
