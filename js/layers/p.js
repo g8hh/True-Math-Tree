@@ -560,7 +560,7 @@ addLayer("p", {
     ],
     passiveGeneration(){
         if(hasUpgrade("a",23)) return 10
-        if(hasMilestone("a",5)) return 1
+        if(hasMilestone("a",5) || hasMilestone("a",26)) return 1
         if(hasMilestone("a",2)) return 0.1
         return 0
     },
