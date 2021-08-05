@@ -75,6 +75,7 @@ addLayer("p", {
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 baseEff = baseEff.mul(buyableEffect("p",12))
                 if(baseEff.gt(8)) baseEff = baseEff.root(3).mul(4)
+                baseEff = logsoftcap(baseEff,e("e1e7"),e(0.25))
                 return baseEff
             },
             effectDisplay(){return `x${format(upgradeEffect("p",12),1)}`}
@@ -143,6 +144,7 @@ addLayer("p", {
                 baseEff = baseEff.mul(buyableEffect("p",12))
                 baseEff = baseEff.pow(buyableEffect("p",13))
                 if(baseEff.gt(1e9)) baseEff = baseEff.cbrt().mul(1e6)
+                baseEff = logsoftcap(baseEff,e("e1.5e6"),e(0.1))
                 return baseEff
             },
             effectDisplay(){return `x${format(upgradeEffect("p",21),1)}`}
@@ -172,6 +174,7 @@ addLayer("p", {
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
                 baseEff = baseEff.mul(buyableEffect("p",11))
                 baseEff = baseEff.mul(buyableEffect("p",12))
+                baseEff = logsoftcap(baseEff,e("e1e7"),e(0.25))
                 return baseEff
             },
             effectDisplay(){return `x${format(upgradeEffect("p",23),1)}`}
@@ -326,6 +329,60 @@ addLayer("p", {
                 return baseEff
             },
             effectDisplay(){return `^${format(upgradeEffect("p",45),2)}`}
+        },
+        51: {
+            description: "hello AC12.使rau再次以一个较低的效率影响ap获取.",
+            cost(){return new OmegaNum("1e65")},
+            unlocked(){return (inChallenge("a",12) || hasChallenge("a",12)) && hasUpgrade("p",35)},
+            effect(){
+                var baseEff = player.a.resetU.add(1).pow(0.33)
+                if(hasUpgrade("p",54)) baseEff = baseEff.pow(upgradeEffect("p",54))
+                return baseEff
+            },
+            effectDisplay(){return `x${format(upgradeEffect(this.layer,this.id),2)}`}
+        },
+        52: {
+            description: "hello AC12.使ap购买项不花费任何点数.ap获取x25.",
+            cost(){return new OmegaNum("1e80")},
+            unlocked(){return (inChallenge("a",12) || hasChallenge("a",12)) && hasUpgrade("p",51)},
+            effect(){
+                var baseEff = new ExpantaNum(25)
+                if(hasUpgrade("p",54)) baseEff = baseEff.pow(upgradeEffect("p",54))
+                return baseEff
+            },
+            effectDisplay(){return `x${format(upgradeEffect(this.layer,this.id),2)}`}
+        },
+        53: {
+            description: "hello AC12.使pp再次以一个较低的效率影响ap获取.",
+            cost(){return new OmegaNum("1e90")},
+            unlocked(){return (inChallenge("a",12) || hasChallenge("a",12)) && hasUpgrade("p",52)},
+            effect(){
+                var baseEff = player.p.points.add(10).log10().pow(0.75)
+                if(hasUpgrade("p",54)) baseEff = baseEff.pow(upgradeEffect("p",54))
+                return baseEff
+            },
+            effectDisplay(){return `x${format(upgradeEffect(this.layer,this.id),2)}`}
+        },
+        54: {
+            description: "hello AC12.指数增幅前边三个升级.(+^0.25)",
+            cost(){return new OmegaNum("1e95")},
+            unlocked(){return (inChallenge("a",12) || hasChallenge("a",12)) && hasUpgrade("p",52)},
+            effect(){
+                var baseEff = new ExpantaNum(0.25)
+                return baseEff.add(1)
+            },
+            effectDisplay(){return `^${format(upgradeEffect(this.layer,this.id),2)}`}
+        },
+        55: {
+            description: "hello AC12.使pp以一个较低的效率降低ap购买项价格.ap购买项价格^0.75.p点获取^1.25.ap挑战12内p点获取再^4.",
+            cost(){return new OmegaNum("1e100")},
+            unlocked(){return (inChallenge("a",12) || hasChallenge("a",12)) && hasUpgrade("p",52)},
+            effect(){
+                var baseEff = player.p.points.add(10).log10().pow(2)
+                if(hasMilestone("g",8)) baseEff = baseEff.pow(1.5)
+                return baseEff
+            },
+            effectDisplay(){return `/${format(upgradeEffect(this.layer,this.id),2)}`}
         },
 },
     buyables: {
@@ -482,6 +539,8 @@ addLayer("p", {
     getResetGain(){
         var gain = new ExpantaNum(1)
         gain = gain.mul(layers.p.baseAmount().div(layers.p.requires()).pow(layers.p.exponent)).pow(layers.p.gainExp()).mul(layers.p.gainMult())
+        if(hasUpgrade("p",55)) gain = gain.pow(1.25)
+        if(inChallenge("a",12) && hasUpgrade("p",55)) gain = gain.pow(4)
         if(gain.gte(10000)) gain = gain.sqrt().mul(100)
         if(gain.gte(1000000)) gain = gain.sqrt().mul(1000)
         if(gain.gt(1e20)){
