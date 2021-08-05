@@ -12,15 +12,19 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "0.91",
+	num: "1.01",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v1.01</h3><br>
+		- 添加1个g里程碑,重新平衡部分内容,当前endgame:约e23 826 000点数,e9 925 000增量点,e8740pp,2e22高德纳箭头点.<br><br>
+	<h3>v1.0</h3><br>
+		- 添加1个ap挑战,5个p升级,5个里程碑,重新平衡部分内容,当前endgame:约e8 120 000点数,e5 714 000增量点,e2765pp,4e21高德纳箭头点.<br><br>
 	<h3>v0.91</h3><br>
 		- 又一次平衡,改正endgame为: 约e2 000 000点数,e7 459 000增量点,e1310pp,3e20高德纳箭头点.<br><br>
 	<h3>v0.9</h3><br>
-		- 添加ap挑战,四个p升级,两个ap里程碑,成吨的log级软上限(?),重新平衡部分内容,当前endgame:约e1 485 000点数,e7 447 800增量点,e1290pp,4e16高德纳箭头点.<br><br>
+		- 添加ap挑战,五个p升级,两个ap里程碑,成吨的log级软上限(?),重新平衡部分内容,当前endgame:约e1 485 000点数,e7 447 800增量点,e1290pp,4e16高德纳箭头点.<br><br>
 	<h3>v0.81</h3><br>
 		- 修复bug.<br><br>
 	<h3>v0.8</h3><br>
@@ -88,6 +92,7 @@ function getPointGen() {
 	if(hasMilestone("a",9)) gain = gain.pow(layers.a.effect5())
 	
 	if(inChallenge("a",11)) gain = gain.pow(0.33)
+	if(inChallenge("a",12)) gain = gain.pow(0.5)
 
 	if(gain.gt(1e100)){
 		var sc = 4
@@ -101,7 +106,7 @@ function getPointGen() {
 	gain = powsoftcap(gain,e("e4000"),e(e4ksc))
 	gain = powsoftcap(gain,e("e20000"),e(4))
 	gain = powsoftcap(gain,e("e100000"),e(5))
-	//gain = powsoftcap(gain,e("e1000000"),e(3))
+	gain = logsoftcap(gain,e("e1e7"),e(0.25))
 	
 	return gain
 }
@@ -114,13 +119,17 @@ function addedPlayerData() { return {
 var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
-	function(){return `时间速率(ts) = ${format(player.c.tickspeed)}`},
-	function(){return `当前endgame:约e2 000 000点数,e7 459 000增量点,e1310pp,3e20高德纳箭头点.`},
+	function(){
+		var basestr = `时间速率(ts) = ${format(player.c.tickspeed)}`
+		if(inChallenge("a",12)) basestr = basestr + `(${format(calcTickspeed())})`
+		return basestr
+	},
+	function(){return `当前endgame:约e23 826 000点数,e9 925 000增量点,e8740pp,2e22高德纳箭头点.`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("1e2000000")&&player.i.points.gte("1e7459000")&&player.p.points.gte("e1310")&&player.a.points.gte(3e20)
+	return player.points.gte("e23826000")&&player.i.points.gte("e9925000")&&player.p.points.gte("e8740")&&player.a.points.gte(2e22)
 }
 
 
@@ -129,7 +138,7 @@ function isEndgame() {
 
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
-	return(3600) // Default is 1 hour which is just arbitrarily large
+	return(1) // Default is 1 hour which is just arbitrarily large
 }
 
 // Use this if you need to undo inflation from an older version. If the version is older than the version that fixed the issue,
