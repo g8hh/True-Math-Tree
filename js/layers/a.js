@@ -8,7 +8,7 @@ function getAPlimit(){
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
     limit = limit.mul(buyableEffect("a",11))
     if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
-    if(limit.gt(1e20)) limit = limit.log10().pow(15.37)
+    limit = logsoftcap(limit,e(1e20),e(hasMilestone("g",6)? 0.2:0.5))
     return limit.floor()
 }
 function AUMilestonekeep(){
@@ -19,6 +19,7 @@ function AUMilestonekeep(){
     if(hasMilestone("a",10)) kp.push(10)
     if(hasMilestone("a",12)) kp.push(12)
     if(hasMilestone("a",24)) kp.push(24)
+    if(hasMilestone("a",26)) kp.push(26)
     return kp
 }
 function getResetUGain(){
@@ -27,11 +28,13 @@ function getResetUGain(){
     if(hasMilestone("a",16)) resetUgain = resetUgain**1.25
     resetUgain = new OmegaNum(resetUgain)
     if(hasMilestone("a",21)) resetUgain = resetUgain.mul(player.a.points.add(10).log10().pow(0.75))
+    if(inChallenge("a",12) || hasChallenge("a",12)) resetUgain = resetUgain.mul(logsoftcap(calcTickspeed().add(10).log10(),e(1000),e(0.2)))
     return resetUgain.floor()
 }
 
 function doACreset(){
     var kp = [0,7,24]
+    if(hasMilestone("a",26)) kp.push(26)
     player.a.milestones = kp
     for(i=2;i>=0;i--) rowReset(i,"a")
     player.points = zero
@@ -73,6 +76,9 @@ addLayer("a", {
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new ExpantaNum(1)
         if(hasMilestone("a",13)) mult = mult.mul(upgradeEffect("a",24).cbrt())
+        if(hasUpgrade("p",51)) mult = mult.mul(upgradeEffect("p",51))
+        if(hasUpgrade("p",52)) mult = mult.mul(upgradeEffect("p",52))
+        if(hasUpgrade("p",53)) mult = mult.mul(upgradeEffect("p",53))
         return mult
     },
     gainExp() { // Calculate the exponent on main currency from bonuses
@@ -115,7 +121,7 @@ addLayer("a", {
         return eff
     },
     effectDescription(){
-        var eff0 = `<br>你已经重置了${player.a.resetU.toFixed(0)}个ap升级(ap升级13不计入)(RAU)<br>你的最佳ap为${format(player.a.best,0)}<br>你的ap上限为${format(getAPlimit(),0)}.`
+        var eff0 = `<br>你已经重置了${format(player.a.resetU)}个ap升级(ap升级13不计入)(RAU)<br>你的最佳ap为${format(player.a.best,0)}<br>你的ap上限为${format(getAPlimit(),0)}.`
         if(!hasMilestone("a",7)) eff0 = ``
         var eff1 = `<br>a -> Min(round(a*<text style = "color:green">${format(this.effect1(),2)}</text>),10)`
         if(hasMilestone("a",2)) eff1 = `<br>a -> Max(round(10/<text style = "color:green">${format(this.effect1(),2)}</text>),1)`
@@ -698,19 +704,29 @@ addLayer("a", {
                 var c = two.pow(x.add(40).pow(1.2)).root(3).sub(1)
                 if(hasMilestone("a",18)) c = c.root(1.1)
                 if(hasMilestone("a",19)) c = c.root(1.1)
+                if(hasUpgrade("p",55)){
+                c = c.pow(0.75)
+                c = c.div(upgradeEffect("p",55))
+                }
+                if(hasMilestone("g",7)) c = c.div(layers.g.effect2())
                 return c
             },
             display() { return `基于最高pp倍增b和cmax.这同时影响ap上限.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}ap<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
             canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
             buy() {
                 //if(hasUpgrade("p",34)){this.buyMax();return}
-                player[this.layer].points = player[this.layer].points.sub(this.cost())
+                if(!hasUpgrade("p",52)) player[this.layer].points = player[this.layer].points.sub(this.cost())
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             buyMax(){
                 var basep = player.i.points
                 if(hasMilestone("a",18)) basep = basep.pow(1.1)
                 if(hasMilestone("a",19)) basep = basep.pow(1.1)
+                if(hasUpgrade("p",55)){
+                    basep = basep.root(0.75)
+                    basep = basep.mul(upgradeEffect("p",55))
+                }
+                if(hasMilestone("g",7)) basep = basep.mul(layers.g.effect2())
                 var c = basep.add(1).pow(3).logBase(2).root(1.2).sub(40).sub(getBuyableAmount(this.layer, this.id)).add(1).min(1/*upgradeEffect("p",31)*/).floor().max(0)
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
             },
@@ -719,6 +735,7 @@ addLayer("a", {
                 baseEff = baseEff.mul(buyableEffect("a",12))
                 if(hasMilestone("a",14)) baseEff = baseEff.pow(2)
                 //if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
+                baseEff = powsoftcap(baseEff,e(1e15),5)
                 if(this.unlocked()) return baseEff
                 return new ExpantaNum(1)
             },
@@ -733,19 +750,29 @@ addLayer("a", {
                 var c = two.pow(x.add(35).pow(1.35)).root(4).sub(1)
                 if(hasMilestone("a",18)) c = c.root(1.1)
                 if(hasMilestone("a",19)) c = c.root(1.1)
+                if(hasUpgrade("p",55)){
+                    c = c.pow(0.75)
+                    c = c.div(upgradeEffect("p",55))
+                }
+                if(hasMilestone("g",7)) c = c.div(layers.g.effect2())
                 return c
             },
             display() { return `基于ap倍增cmax.这同时影响上一个ap可重复购买项.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}ap<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
             canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
             buy() {
                 //if(hasUpgrade("p",34)){this.buyMax();return}
-                player[this.layer].points = player[this.layer].points.sub(this.cost())
+                if(!hasUpgrade("p",52)) player[this.layer].points = player[this.layer].points.sub(this.cost())
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             buyMax(){
                 var basep = player.i.points
                 if(hasMilestone("a",18)) basep = basep.pow(1.1)
                 if(hasMilestone("a",19)) basep = basep.pow(1.1)
+                if(hasUpgrade("p",55)){
+                    basep = basep.root(0.75)
+                    basep = basep.mul(upgradeEffect("p",55))
+                }
+                if(hasMilestone("g",7)) basep = basep.mul(layers.g.effect2())
                 var c = basep.add(1).pow(4).logBase(2).root(1.35).sub(35).sub(getBuyableAmount(this.layer, this.id)).add(1).min(1/*upgradeEffect("p",31)*/).floor().max(0)
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
             },
@@ -774,6 +801,16 @@ addLayer("a", {
             unlocked(){return hasMilestone("a",24)},
             onEnter(){doACreset()},
             onExit(){player.a.activeChallenge = 11}
+        },
+        12: {
+            name: "稳固时空",
+            challengeDescription: "大于10的时间速率无效,但它以xlog10(x+10)的效率加成rau获取(于x1000达到软上限).点数获取^0.5.上个挑战的增量点获取加成被禁用.添加又一些新升级.",
+            canComplete(){return player.points.gte("e119000")},
+            goalDescription(){return format(ExpantaNum("e119000"))+"点数"},
+            rewardDisplay(){return `保留该挑战的所有增益.`},
+            unlocked(){return hasMilestone("a",26)},
+            onEnter(){doACreset()},
+            onExit(){player.a.activeChallenge = 12}
         },
     },
 
@@ -876,7 +913,7 @@ addLayer("a", {
         },
         15: {
             requirementDescription: "16:可购买项11达到6级",
-            effectDescription: "可购买项的效果^2.减弱p14的e100软上限.(^0.25->^0.5)",
+            effectDescription: "ap可购买项的效果^2.减弱p14的e100软上限.(^0.25->^0.5)",
             done() { return player.a.buyables[11].gte(6) },
             unlocked(){return hasMilestone("a",13)},
         },
@@ -930,7 +967,7 @@ addLayer("a", {
         },
         24: {
             requirementDescription: "25:e900,000增量点+6发生器.",
-            effectDescription: "这树怎么能没有挑战?解锁ap挑战(ac) 进入挑战会重置你所有以前的进度,只保留最佳ap和0,8,25及25以后的里程碑.你的ap不再会低于3.购买au35不会重置最佳ap.",
+            effectDescription: "这树怎么能没有挑战?解锁ap挑战(ac) 进入挑战会重置你所有以前的进度,只保留最佳ap和1,8,25里程碑.你的ap不再会低于3.购买au35不会重置最佳ap.",
             done() { return player.i.points.gte("e900000") && player.g.points.gte(6) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
@@ -938,6 +975,12 @@ addLayer("a", {
             requirementDescription: "26:30发生器.&&e1 000 000P",
             effectDescription: "p可重复购买项21的效果^0.5后加成p45.",
             done() { return player.i.points.gte("e1000000") && player.g.points.gte(30) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        26: {
+            requirementDescription: "27:100发生器.",
+            effectDescription: "新挑战.",
+            done() { return player.g.points.gte(100) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
     },

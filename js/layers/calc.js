@@ -8,10 +8,12 @@ function calcTickspeed(){
         if(hasUpgrade("a",15)) sc = 1.25
         tickspeed = tickspeed.root(sc).mul(1e18**(1-1/sc))
     }
-    if(tickspeed.gte("e150000")) tickspeed = tickspeed.log10().div(15000).pow(150000)
+    tickspeed = logsoftcap(tickspeed,e("e150000"),hasMilestone("g",6)? 0.175:0.5)
     tickspeed = tickspeed.mul(layers.b.effect())
     tickspeed = tickspeed.mul(layers.g.effect())
-    tickspeed = powsoftcap(tickspeed,e("e200000"),e(5))
+    tickspeed = powsoftcap(tickspeed,e("e200000"),e(3))
+    tickspeed = logsoftcap(tickspeed,e("e360000"),0.05)
+    tickspeed = logsoftcap(tickspeed,e("e400000"),0.1)
     return tickspeed
 }
 function getbp1(){
@@ -97,6 +99,7 @@ addLayer("c", {
     //important!!!
     update(diff){        
         player.c.tickspeed = calcTickspeed()
+        if(inChallenge("a",12)) player.c.tickspeed = player.c.tickspeed.min(10)
         player.c.tick = player.c.tick.add(player.c.tickspeed.mul(diff))
         player.c.basepoints2 = player.c.tick.div(20).add(1).min(getMaxBP())
         player.c.tbasepoints2 = player.c.tick.div(20).add(1)
@@ -120,6 +123,7 @@ addLayer("c", {
         points = points.mul(layers.a.effect3())
         points = points.mul(layers.i.effect())
         if(inChallenge("a",11)) points = points.pow(0.33)
+        if(inChallenge("a",12)) points = points.pow(0.5)
         player.points = points
         }
     }
