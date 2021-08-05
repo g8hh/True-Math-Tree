@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "1.0",
+	num: "1.01",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v1.01</h3><br>
+		- 添加1个g里程碑,重新平衡部分内容,当前endgame:约e23 826 000点数,e9 925 000增量点,e8740pp,2e22高德纳箭头点.<br><br>
 	<h3>v1.0</h3><br>
 		- 添加1个ap挑战,5个p升级,5个里程碑,重新平衡部分内容,当前endgame:约e8 120 000点数,e5 714 000增量点,e2765pp,4e21高德纳箭头点.<br><br>
 	<h3>v0.91</h3><br>
@@ -104,7 +106,7 @@ function getPointGen() {
 	gain = powsoftcap(gain,e("e4000"),e(e4ksc))
 	gain = powsoftcap(gain,e("e20000"),e(4))
 	gain = powsoftcap(gain,e("e100000"),e(5))
-	gain = logsoftcap(gain,e("e2.5e7"),e(0.25))
+	gain = logsoftcap(gain,e("e1e7"),e(0.25))
 	
 	return gain
 }
@@ -122,12 +124,12 @@ var displayThings = [
 		if(inChallenge("a",12)) basestr = basestr + `(${format(calcTickspeed())})`
 		return basestr
 	},
-	function(){return `当前endgame:约e8 120 000点数,e5 714 000增量点,e2765pp,4e21高德纳箭头点.`},
+	function(){return `当前endgame:约e23 826 000点数,e9 925 000增量点,e8740pp,2e22高德纳箭头点.`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("1e8120000")&&player.i.points.gte("1e5714000")&&player.p.points.gte("e2765")&&player.a.points.gte(4e21)
+	return player.points.gte("e23826000")&&player.i.points.gte("e9925000")&&player.p.points.gte("e8740")&&player.a.points.gte(2e22)
 }
 
 

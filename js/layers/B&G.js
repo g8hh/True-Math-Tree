@@ -27,7 +27,7 @@ addLayer("b", {
     layerShown(){return hasMilestone("a",23)},
     effect(){
         var eff = two.pow(player[this.layer].points)
-        eff = powsoftcap(eff,e("e100000"),e(hasMilestone("g",0) ? hasMilestone("g",3)? 4 : 5 : 10))
+        if(!hasMilestone("g",10)) eff = powsoftcap(eff,e("e100000"),e(hasMilestone("g",0) ? hasMilestone("g",3)? 4 : 5 : 10))
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
         return eff
     },
@@ -238,6 +238,7 @@ addLayer("g", {
     effect(){
         var eff = two.pow(player[this.layer].power.root(3))
         eff = logsoftcap(eff,e("e40000"),0.125)
+        eff = logsoftcap(eff,e("e7500000"),0.5)
         return eff
     },
     effect2(){
@@ -400,6 +401,16 @@ addLayer("g", {
             requirementDescription: "280发生器",
             effectDescription: "p55效果^1.5.",
             done() { return player.g.points.gte(280) }
+        },
+        9: {
+            requirementDescription: "420发生器",
+            effectDescription: "ap可重复购买项11的效果软上限被削弱.",
+            done() { return player.g.points.gte(420) }
+        },
+        10: {
+            requirementDescription: "1460发生器",
+            effectDescription: "倍增器效果软上限被移除.",
+            done() { return player.g.points.gte(1460) }
         },
     },
     canBuyMax(){return hasMilestone("g",3)},

@@ -14,6 +14,7 @@ function calcTickspeed(){
     tickspeed = powsoftcap(tickspeed,e("e200000"),e(3))
     tickspeed = logsoftcap(tickspeed,e("e360000"),0.05)
     tickspeed = logsoftcap(tickspeed,e("e400000"),0.1)
+    tickspeed = logsoftcap(tickspeed,e("e600000"),0.25)
     return tickspeed
 }
 function getbp1(){

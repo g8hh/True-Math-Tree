@@ -735,7 +735,7 @@ addLayer("a", {
                 baseEff = baseEff.mul(buyableEffect("a",12))
                 if(hasMilestone("a",14)) baseEff = baseEff.pow(2)
                 //if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
-                baseEff = powsoftcap(baseEff,e(1e15),5)
+                baseEff = powsoftcap(baseEff,e(1e15),hasMilestone("g",9)? 2:5)
                 if(this.unlocked()) return baseEff
                 return new ExpantaNum(1)
             },
@@ -979,7 +979,7 @@ addLayer("a", {
         },
         26: {
             requirementDescription: "27:100发生器.",
-            effectDescription: "新挑战.",
+            effectDescription: "新挑战.p点自动获取100%.挑战时保留该升级.",
             done() { return player.g.points.gte(100) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
