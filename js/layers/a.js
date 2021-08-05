@@ -795,7 +795,7 @@ addLayer("a", {
         11: {
             name: "增量致胜",
             challengeDescription: "点数获取^0.33.增量点^1.5,增量点效果^3.添加新的升级.",
-            canComplete(){return player.points.gte("e351000")},
+            canComplete(){return player.points.gte("e290000")},
             goalDescription(){return format(ExpantaNum("e351000"))+"点数"},
             rewardDisplay(){return `保留该挑战的所有增益.`},
             unlocked(){return hasMilestone("a",24)},
