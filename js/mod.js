@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "1.02",
+	num: "1.1-beta",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v1.1-beta</h3><br>
+		- 添加亿点内容,重新平衡部分内容,当前endgame:约e100 000 000(e1e8)点数,e20 000 000(e2e7)增量点,e2e6pp,2e23高德纳箭头点.<br><br>
 	<h3>v1.02</h3><br>
 		- 修复ac11无法完成的问题.<br><br>
 	<h3>v1.01</h3><br>
@@ -80,8 +82,8 @@ function canGenPoints(){
 }
 
 // Calculate points/sec!
-function getPointGen() {
-	if(!canGenPoints) return new ExpantaNum(0)
+function getPointGen(calc = false) {
+	if(!canGenPoints && !calc) return new ExpantaNum(0)
 	var gain = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1).mul(player.c.tickspeed)
 	
 	if(hasUpgrade("p",12)) gain = gain.mul(upgradeEffect("p",12))
@@ -92,9 +94,13 @@ function getPointGen() {
 	gain = gain.mul(layers.a.effect3())
 	gain = gain.mul(layers.i.effect())
 	if(hasMilestone("a",9)) gain = gain.pow(layers.a.effect5())
+	//token
+	gain = gain.pow(tokenEffect(11))
 	
-	if(inChallenge("a",11)) gain = gain.pow(0.33)
-	if(inChallenge("a",12)) gain = gain.pow(0.5)
+	if(inChallenge("a",11) || player.t.nerf.AC.eq(1) || player.t.nerf.AC.eq(3)) gain = gain.pow(0.33)
+	if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) gain = gain.pow(0.5)
+	if(inChallenge("a",21)) gain = gain.pow(0.25)
+	gain = gain.root(player.t.nerf.point)
 
 	if(gain.gt(1e100)){
 		var sc = 4
@@ -123,15 +129,15 @@ var displayThings = [
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){
 		var basestr = `时间速率(ts) = ${format(player.c.tickspeed)}`
-		if(inChallenge("a",12)) basestr = basestr + `(${format(calcTickspeed())})`
+		if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) basestr = basestr + `(${format(calcTickspeed())})`
 		return basestr
 	},
-	function(){return `当前endgame:约e23 826 000点数,e9 925 000增量点,e8740pp,2e22高德纳箭头点.`},
+	function(){return `当前endgame:约e100 000 000(e1e8)点数,e20 000 000(e2e7)增量点,e2e6pp,2e23高德纳箭头点.(你不一定要刷到endgame,这只是beta版)`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("e23826000")&&player.i.points.gte("e9925000")&&player.p.points.gte("e8740")&&player.a.points.gte(2e22)
+	return player.points.gte("e1e8")&&player.i.points.gte("e2e7")&&player.p.points.gte("e2e6")&&player.a.points.gte(2e23)
 }
 
 
