@@ -24,6 +24,7 @@ addLayer("i", {
     effect(){
         var eff = player[this.layer].points.root(2)
         if(inChallenge("a",11) || hasChallenge("a",11)) eff = eff.pow(3)
+        if(inChallenge("a",21)) eff = one
         return eff
     },
     effectDescription(){return `P -> P*${format(this.effect())}`},
@@ -84,7 +85,7 @@ addLayer("i", {
                 if(player.points.gt(1)) baseEff = baseEff.mul(player.points.log10().add(1).pow(2))
                 baseEff = baseEff.pow(buyableEffect("i",13))
                 if(hasMilestone("a",20)) baseEff = baseEff.pow(2)
-                if((inChallenge("a",11) || hasChallenge("a",11)) && !inChallenge("a",12)) baseEff = baseEff.pow(1.5)
+                if((inChallenge("a",11) || hasChallenge("a",11)) && (!inChallenge("a",12) && !player.t.nerf.AC.eq(2) && !player.t.nerf.AC.eq(3))) baseEff = baseEff.pow(1.5)
                 if(baseEff.gt(1e600)) baseEff = baseEff.cbrt().mul(1e400)
                 if(baseEff.gt(1e1000)){
                     var sc = 5
@@ -92,7 +93,7 @@ addLayer("i", {
                 }
                 baseEff = powsoftcap(baseEff,e("e3000"),e(3))
                 baseEff = powsoftcap(baseEff,e("e400000"),e(5))
-                baseEff = logsoftcap(baseEff,e("e2e6"),e(hasMilestone("g",6)? 0.175:0.5))
+                baseEff = logsoftcap(baseEff,e("e2e6"),e(hasMilestone("a",28)? 0.175:0.5))
                 return baseEff
             },
             unlocked(){return true},
@@ -211,6 +212,9 @@ addLayer("i", {
                 }
             }
         }
+    },
+    doReset(layer){
+        layerDataReset(this.layer,[])
     },
     /*milestones: {
         0: {

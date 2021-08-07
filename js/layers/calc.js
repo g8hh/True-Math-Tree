@@ -3,12 +3,16 @@ function calcTickspeed(){
     if(hasMilestone("a",0)) tickspeed = tickspeed.mul(5)
     if(hasUpgrade("p",21)) tickspeed = tickspeed.mul(upgradeEffect("p",21))
     if(hasUpgrade("p",41)) tickspeed = tickspeed.mul(upgradeEffect("p",41))
+    //token
+    tickspeed = tickspeed.pow(tokenEffect(11))
+    tickspeed = tickspeed.pow(tokenEffect(12))
+
     if(tickspeed.gte(1e18)){
         var sc = 3
         if(hasUpgrade("a",15)) sc = 1.25
         tickspeed = tickspeed.root(sc).mul(1e18**(1-1/sc))
     }
-    tickspeed = logsoftcap(tickspeed,e("e150000"),hasMilestone("g",6)? 0.175:0.5)
+    tickspeed = logsoftcap(tickspeed,e("e150000"),hasMilestone("a",28)? 0.175:0.5)
     tickspeed = tickspeed.mul(layers.b.effect())
     tickspeed = tickspeed.mul(layers.g.effect())
     tickspeed = powsoftcap(tickspeed,e("e200000"),e(3))
@@ -99,8 +103,8 @@ addLayer("c", {
 
     //important!!!
     update(diff){        
-        player.c.tickspeed = calcTickspeed()
-        if(inChallenge("a",12)) player.c.tickspeed = player.c.tickspeed.min(10)
+        player.c.tickspeed = calcTickspeed().max(1)
+        if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) player.c.tickspeed = player.c.tickspeed.min(10)
         player.c.tick = player.c.tick.add(player.c.tickspeed.mul(diff))
         player.c.basepoints2 = player.c.tick.div(20).add(1).min(getMaxBP())
         player.c.tbasepoints2 = player.c.tick.div(20).add(1)
@@ -118,14 +122,6 @@ addLayer("c", {
         player.c.basepoints1 = getbp1()
         player.c.arrows = geta()
 
-        if(!hasUpgrade("p",13)){
-        var points = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1)
-        if(hasUpgrade("p",12)) points = points.mul(upgradeEffect("p",12))
-        points = points.mul(layers.a.effect3())
-        points = points.mul(layers.i.effect())
-        if(inChallenge("a",11)) points = points.pow(0.33)
-        if(inChallenge("a",12)) points = points.pow(0.5)
-        player.points = points
-        }
+        if(!hasUpgrade("p",13)) player.points = getPointGen(true)
     }
 })

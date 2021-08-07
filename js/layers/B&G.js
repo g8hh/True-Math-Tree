@@ -27,7 +27,7 @@ addLayer("b", {
     layerShown(){return hasMilestone("a",23)},
     effect(){
         var eff = two.pow(player[this.layer].points)
-        if(!hasMilestone("g",10)) eff = powsoftcap(eff,e("e100000"),e(hasMilestone("g",0) ? hasMilestone("g",3)? 4 : 5 : 10))
+        if(!hasMilestone("a",32)) eff = powsoftcap(eff,e("e100000"),e(hasMilestone("g",0) ? hasMilestone("g",3)? 4 : 5 : 10))
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
         return eff
     },
@@ -122,7 +122,7 @@ addLayer("b", {
     //important!!!
     update(diff){
         var tick = diff
-        if(hasMilestone("g",5)) tick *= 100
+        if(hasMilestone("a",27)) tick *= 100
         if(hasMilestone("g",4)) player.b.points = player.b.points.add(this.getResetGain().mul(Math.min(tick,1)))
         //var incproc = buyableEffect("i",11)
         //player.i.points = player.i.points.add(incproc.mul(diff).mul(player.c.tickspeed)).max(1)
@@ -232,13 +232,15 @@ addLayer("g", {
     proc(){
         var eff = player[this.layer].points.add(1).pow(0.25)
         if(hasUpgrade("p",44)) eff = eff.pow(upgradeEffect("p",44))
-        if(hasMilestone("g",5)) eff = eff.pow(1.25)
+        if(hasMilestone("a",27)) eff = eff.pow(1.25)
         return eff.sub(1)
     },
     effect(){
         var eff = two.pow(player[this.layer].power.root(3))
         eff = logsoftcap(eff,e("e40000"),0.125)
         eff = logsoftcap(eff,e("e7500000"),0.5)
+        eff = logsoftcap(eff,e("e125e5"),0.375)
+        //eff = logsoftcap(eff,e("e2e7"),1)
         return eff
     },
     effect2(){
@@ -381,36 +383,6 @@ addLayer("g", {
             requirementDescription: "6发生器",
             effectDescription: "b层级不再重置任何东西.每秒获得100%的倍增器.",
             done() { return player.g.points.gte(6) }
-        },
-        5: {
-            requirementDescription: "150发生器",
-            effectDescription: "每秒获得10000%的倍增器.发生器效果^1.25.",
-            done() { return player.g.points.gte(150) }
-        },
-        6: {
-            requirementDescription: "225发生器",
-            effectDescription: "减弱对非b/g的ts的log级软上限.同时减弱增量的log级软上限.(0.5次log -> 0.175次log)",
-            done() { return player.g.points.gte(225) }
-        },
-        7: {
-            requirementDescription: "250发生器",
-            effectDescription: "能量同样降低ap可重复购买项价格.(/(x+1)^0.33)减弱ap上限的log级软上限.",
-            done() { return player.g.points.gte(250) }
-        },
-        8: {
-            requirementDescription: "280发生器",
-            effectDescription: "p55效果^1.5.",
-            done() { return player.g.points.gte(280) }
-        },
-        9: {
-            requirementDescription: "420发生器",
-            effectDescription: "ap可重复购买项11的效果软上限被削弱.",
-            done() { return player.g.points.gte(420) }
-        },
-        10: {
-            requirementDescription: "1460发生器",
-            effectDescription: "倍增器效果软上限被移除.",
-            done() { return player.g.points.gte(1460) }
         },
     },
     canBuyMax(){return hasMilestone("g",3)},
