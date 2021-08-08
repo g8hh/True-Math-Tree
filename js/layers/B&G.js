@@ -238,8 +238,8 @@ addLayer("g", {
     effect(){
         var eff = two.pow(player[this.layer].power.root(3))
         eff = logsoftcap(eff,e("e40000"),0.125)
-        eff = logsoftcap(eff,e("e7500000"),0.5)
-        eff = logsoftcap(eff,e("e125e5"),0.375)
+        eff = logsoftcap(eff,e("e1e7"),0.5)
+        eff = logsoftcap(eff,e("e1.5e7"),0.375)
         //eff = logsoftcap(eff,e("e2e7"),1)
         return eff
     },
