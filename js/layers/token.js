@@ -53,9 +53,9 @@ addLayer("t", {
     resource: "奖牌(medal)", // Name of prestige currency
     baseResource: "ap",
     baseAmount() {return player.a.points},
-    requires(){return new ExpantaNum(2e23)},
+    requires(){return new ExpantaNum(1.25e23)},
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
-    exponent: 10,
+    exponent: 5,
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new ExpantaNum(1)
         //if(hasUpgrade("p",11)) mult = mult.mul(upgradeEffect("p",11))

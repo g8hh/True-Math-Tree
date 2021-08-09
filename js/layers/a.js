@@ -7,7 +7,7 @@ function getAPlimit(){
     if(hasUpgrade("a",11)) limit = limit.mul(upgradeEffect("a",11))
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
     limit = limit.mul(buyableEffect("a",11))
-    if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
+    if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.6)
     limit = logsoftcap(limit,e(1e20),e(hasMilestone("a",28)? 0.2:0.5))
     return limit.floor()
 }
