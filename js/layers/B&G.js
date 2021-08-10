@@ -125,7 +125,7 @@ addLayer("b", {
         if(hasMilestone("a",27)) tick *= 100
         if(hasMilestone("g",4)) player.b.points = player.b.points.add(this.getResetGain().mul(Math.min(tick,1)))
         //var incproc = buyableEffect("i",11)
-        //player.i.points = player.i.points.add(incproc.mul(diff).mul(player.c.tickspeed)).max(1)
+        //player.i.points = player.i.points.add(incproc.mul(diff).mul(tickspeed)).max(1)
 
         //auto
         /*
@@ -237,9 +237,9 @@ addLayer("g", {
     },
     effect(){
         var eff = two.pow(player[this.layer].power.root(3))
-        eff = logsoftcap(eff,e("e40000"),0.125)
-        eff = logsoftcap(eff,e("e1e7"),0.5)
-        eff = logsoftcap(eff,e("e1.5e7"),0.375)
+        eff = logsoftcap(eff,e("e40000"),0.1)
+        eff = logsoftcap(eff,e("e7500000"),0.5)
+        eff = logsoftcap(eff,e("e125e5"),0.4)
         //eff = logsoftcap(eff,e("e2e7"),1)
         return eff
     },
@@ -336,12 +336,12 @@ addLayer("g", {
         },
     },
     */
-
+    resetsNothing(){return hasMilestone("t",4)},
     //important!!!
     update(diff){
         if(player.c.tick.gte("e128000")) player.g.power = this.proc().mul(player.c.tick.div("e128000").log10().pow(2)).max(player.g.power)
         //var incproc = buyableEffect("i",11)
-        //player.i.points = player.i.points.add(incproc.mul(diff).mul(player.c.tickspeed)).max(1)
+        //player.i.points = player.i.points.add(incproc.mul(diff).mul(tickspeed)).max(1)
 
         //auto
         /*
@@ -397,6 +397,12 @@ addLayer("g", {
     prestigeButtonText(){
         return "+ "+formatWhole(this.getResetGain())+" "+this.resource
     },*/
+    doReset(layer){
+        if(hasMilestone("t",5)){
+            layerDataReset(this.layer,["milestones"])
+        }
+        else layerDataReset(this.layer)
+    },
     hotkeys: [
         {key: "g", description: "G: G转", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
     ],
