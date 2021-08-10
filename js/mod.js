@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "1.1-beta-0.1",
+	num: "1.1-beta-0.2",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v1.1-beta-0.2</h3><br>
+		- 添加一些token里程碑,当前endgame:约100medal,10C21token,e1.3e8点数,e24高德纳箭头点,7000发生器.*反抗log级软上限<br><br>
 	<h3>v1.1-beta-0.1</h3><br>
 		- 重新平衡token,添加一些token里程碑,当前endgame:约e100 000 000(e1e8)点数,e20 000 000(e2e7)增量点,e2e6pp,2e23高德纳箭头点.<br><br>
 	<h3>v1.1-beta</h3><br>
@@ -134,12 +136,13 @@ var displayThings = [
 		if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) basestr = basestr + `(${format(calcTickspeed())})`
 		return basestr
 	},
-	function(){return `当前endgame:约e100 000 000(e1e8)点数,e20 000 000(e2e7)增量点,e2e6pp,2e23高德纳箭头点.(你不一定要刷到endgame,这只是beta版)`},
+	function(){return `当前endgame:约100medal,10C21token,e1.3e8点数,e24高德纳箭头点,7000发生器.`},
+	function(){return `作者:QwQ(QwQe308,qq3174905334).`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("e1e8")&&player.i.points.gte("e2e7")&&player.p.points.gte("e2e6")&&player.a.points.gte(2e23)
+	return player.t.points.gte(100)&&player.t.tokens[21].gte(10)&&player.points.gte("e1.3e8")&&player.a.points.gte(1e24)&&player.g.points.gte(7000)
 }
 
 

@@ -5,12 +5,14 @@ function getAPlimit(){
     ticks -= 1
     var limit = new ExpantaNum(50)
     if(ticks >= 0) return limit
+    if(hasMilestone("t",9)) limit = limit.add(player.t.points)
     if(hasMilestone("a",8)) limit = limit.pow((player.a.upgrades.length/5)**2+1)
     if(hasUpgrade("a",11)) limit = limit.mul(upgradeEffect("a",11))
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
     limit = limit.mul(buyableEffect("a",11))
     if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
     limit = logsoftcap(limit,e(1e20),e(hasMilestone("a",28)? 0.2:0.5))
+    limit = limit.root(player.t.nerf.APL)
     return limit.floor()
 }
 function AUMilestonekeep(){
@@ -24,6 +26,7 @@ function AUMilestonekeep(){
     if(hasMilestone("a",26)) kp.push(26)
     if(hasMilestone("a",33)) kp.push(33)
     if(hasMilestone("t",3)) kp.push(23)
+    if(hasMilestone("t",10)) kp.push(14)
     return kp
 }
 function getResetUGain(){
@@ -36,25 +39,29 @@ function getResetUGain(){
     return resetUgain.floor()
 }
 
-function doACreset(resetToken = true){
+function doACreset(resetToken = true,id = 11){
     if(resetToken) layerDataReset("t",[])
     var kp = [0,7,24]
     if(hasMilestone("a",26)) kp.push(26)
     if(hasMilestone("a",33)) kp.push(33)
     if(hasMilestone("t",3)) kp.push(23)
+    if(hasMilestone("t",10)) kp.push(14)
     player.a.milestones = kp
     for(i=2;i>=0;i--) rowReset(i,"a")
     player.points = zero
     player.a.points = zero
     player.a.pointbest = zero
     player.a.ppbest = zero
-    player.a.upgrades = []
+    if(player.t.tokens[id].lt(1)){
+        player.a.upgrades = []
+        if(hasMilestone("t",2)) player.a.upgrades = [13]
+    }
     player.a.resetU = zero
     player.a.costmult = one
     player.a.buyables[11] = zero
     player.a.buyables[12] = zero
     if(hasMilestone("t",1)) player.p.upgrades = [31,32,33,34,35]
-    if(hasMilestone("t",2)) player.a.upgrades = [13]
+    
 }
 
 addLayer("a", {
@@ -64,11 +71,13 @@ addLayer("a", {
     startData() { return {
         unlocked: false,
 		points: new ExpantaNum(0),
+        limitBest: new ExpantaNum(50),
         costmult: new ExpantaNum(1),
         pointbest: new ExpantaNum(0),
         ppbest: new ExpantaNum(0),
         resetU: new ExpantaNum(0),
-        resetUsetting: false
+        resetUsetting: false, 
+        aausetting:false
     }},
     color: "lightblue",
     resource: "高德纳箭头点(ap)", // Name of prestige currency
@@ -173,12 +182,18 @@ addLayer("a", {
             display() {return `是否禁用重置ap升级的确认框<br /><br />当前状态:${player.a.resetUsetting?"是":"否"}`},
             onClick(){player.a.resetUsetting=!player.a.resetUsetting}
         },
+        //13: {
+        //    canClick(){return hasMilestone("t",12)},
+        //    display() {return `调节自动ap升级<br /><br />当前状态:${player.a.aausetting?"开启":"关闭"}`},
+        //    onClick(){player.a.aausetting=!player.a.aausetting}
+        //},
     },
+    //autoUpgrade(){return hasMilestone("t",12) && player.a.aausetting},
     upgrades: {
         11: {
             description: `最佳点数加成ap上限.(软上限前)<br><br>价格增长倍率:x5.`,
             cost(){return new OmegaNum(256).mul(player.a.costmult)},
-            costinc(){return 5},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(5).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",11)},
             effect(){
                 var baseEff = player.a.pointbest.add(1).log10().add(1).log10().pow(2)
@@ -199,7 +214,7 @@ addLayer("a", {
         12: {
             description: `减弱e100点数软上限(^0.25 -> ^0.33).<br><br>价格增长倍率:x1.25.`,
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
-            costinc(){return 1.25},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(1.25).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",12)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -227,7 +242,7 @@ addLayer("a", {
         13: {
             description: "解锁增量x.还有,欢迎再一次来到起点.升级31的效果以其3次根的效果加成增量x,升级32的时间x10后作用于增量x.<br><br>价格增长倍率:x1.",
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(1).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return hasMilestone("a",7)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -255,7 +270,7 @@ addLayer("a", {
         14: {
             description: "p转的sin函数被替换为1.5.<br><br>价格增长倍率:x1.5.",
             cost(){return new OmegaNum(75).mul(player.a.costmult)},
-            costinc(){return 1.5},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(1.5).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",14)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -283,7 +298,7 @@ addLayer("a", {
         15: {
             description: `减弱1e18时间速率软上限(^0.33 -> ^0.8).ap里程碑1的'pp基于c的获取指数/2'效果被反转.<br><br>价格增长倍率:x4.`,
             cost(){return new OmegaNum("256").mul(player.a.costmult)},
-            costinc(){return 4},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(4).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",15)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -311,7 +326,7 @@ addLayer("a", {
         21: {
             description: `pp1e20软上限被减弱.(^0.33 -> ^0.5)<br><br>价格增长倍率:x3.`,
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
-            costinc(){return 3},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(3).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",21)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -339,7 +354,7 @@ addLayer("a", {
         22: {
             description: `再次减弱点数e100软上限.(^0.25->^0.33或^0.33->^0.5)<br><br>价格增长倍率:x3.`,
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
-            costinc(){return 3},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(3).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",22)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -367,7 +382,7 @@ addLayer("a", {
         23: {
             description: `你每秒获得1000%的pp.<br><br>价格增长倍率:x1.`,
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(1).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",23)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -395,7 +410,7 @@ addLayer("a", {
         24: {
             description: `总计的被重置了的ap升级加成ap上限.(?<br><br>价格增长倍率:x2.`,
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
-            costinc(){return 2},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(2).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",24)},
             effect(){
                 var baseEff = player.a.resetU.add(1).pow(1.5)
@@ -415,7 +430,7 @@ addLayer("a", {
         25: {
             description: `提高ap获取指数.(^0.125->^0.25或^0.1875->0.3125)<br><br>价格增长倍率:x2.`,
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
-            costinc(){return 2},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(2).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",25)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -443,10 +458,11 @@ addLayer("a", {
         31: {
             description: `最佳ap优化au11.<br><br>价格增长倍率:x25.`,
             cost(){return new OmegaNum("1024").mul(player.a.costmult)},
-            costinc(){return 25},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(25).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",31)&&hasMilestone("a",13)},
             effect(){
                 var baseEff = player.a.best.pow(0.06)
+                baseEff = logsoftcap(baseEff,e(28),0.5)
                 return baseEff
             },
             effectDisplay(){return `^${format(upgradeEffect("a",31),1)}`},
@@ -461,7 +477,7 @@ addLayer("a", {
         32: {
             description: `p34效果^1.5.<br><br>价格增长倍率:x1.`,
             cost(){return new OmegaNum("128").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(1).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",32)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -489,7 +505,7 @@ addLayer("a", {
         33: {
             description: `解锁增量^.自动购买最大.<br><br>价格增长倍率:x25.`,
             cost(){return new OmegaNum("1024").mul(player.a.costmult)},
-            costinc(){return 25},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(25).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",33)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -517,7 +533,7 @@ addLayer("a", {
         34: {
             description: `延迟pp的1e75软上限至1e100.<br><br>价格增长倍率:x10.`,
             cost(){return new OmegaNum("1024").mul(player.a.costmult)},
-            costinc(){return 10},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(10).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",34)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -545,7 +561,7 @@ addLayer("a", {
         35: {
             description: `解锁新的ap里程碑.里程碑完成后仍然保留.购买时重置最佳ap.<br><br>价格增长倍率:x1024.`,
             cost(){return new OmegaNum("10086").mul(player.a.costmult)},
-            costinc(){return 1024},//注：omeganum或数字都行
+            costinc(){return ExpantaNum(1024).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",35)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -759,7 +775,7 @@ addLayer("a", {
             unlocked(){return hasMilestone("a",14)&&geta().eq(1)},
             abtick:0,
             abdelay(){
-                return 1.797e308
+                return hasMilestone("t",10) ? 0 : 1.797e308
             }
         },
         12: {
@@ -806,7 +822,7 @@ addLayer("a", {
             unlocked(){return hasMilestone("a",14)&&geta().eq(1)},
             abtick:0,
             abdelay(){
-                return 1.797e308
+                return hasMilestone("t",10) ? 0 : 1.797e308
             }
         },
     },
@@ -846,11 +862,24 @@ addLayer("a", {
 
     //important!!!
     update(diff){    
+        player.a.limitBest = player.a.limitBest.max(getAPlimit())
+        player.a.best = player.a.limitBest.min(player.a.best)
         player.a.points = player.a.points.min(getAPlimit().floor())
         player.a.pointbest = player.points.max(player.a.pointbest)
         player.a.ppbest = player.p.points.max(player.a.ppbest)
         if(hasMilestone("a",24)) player.a.points = player.a.points.max(3)
         if(hasMilestone("t",6)) player.a.resetU = player.a.resetU.add(getResetUGain().mul(diff*0.01))
+
+        //auto
+        for(i in player[this.layer].buyables){
+            if(layers[this.layer].buyables[i]){
+                layers[this.layer].buyables[i].abtick += diff
+                if(layers[this.layer].buyables[i].abtick >= layers[this.layer].buyables[i].abdelay() && layers[this.layer].buyables[i].unlocked()){
+                    layers[this.layer].buyables[i].buy()
+                    layers[this.layer].buyables[i].abtick = 0
+                }
+            }
+        }
     },
     milestones: {
         0: {

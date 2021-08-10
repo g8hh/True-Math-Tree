@@ -201,14 +201,12 @@ addLayer("i", {
         player.i.points = player.i.points.add(incproc.mul(diff).mul(tickspeed)).max(1)
 
         //auto
-        for(row=1;row<=1;row++){
-            for(col=1;col<=4;col++){
-                if(layers[this.layer].buyables[row*10+col]){
-                    layers[this.layer].buyables[row*10+col].abtick += diff
-                    if(layers[this.layer].buyables[row*10+col].abtick >= layers[this.layer].buyables[row*10+col].abdelay() && layers[this.layer].buyables[row*10+col].unlocked()){
-                        layers[this.layer].buyables[row*10+col].buy()
-                        layers[this.layer].buyables[row*10+col].abtick = 0
-                    }
+        for(i in player[this.layer].buyables){
+            if(layers[this.layer].buyables[i]){
+                layers[this.layer].buyables[i].abtick += diff
+                if(layers[this.layer].buyables[i].abtick >= layers[this.layer].buyables[i].abdelay() && layers[this.layer].buyables[i].unlocked()){
+                    layers[this.layer].buyables[i].buy()
+                    layers[this.layer].buyables[i].abtick = 0
                 }
             }
         }
