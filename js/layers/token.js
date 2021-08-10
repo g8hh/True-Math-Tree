@@ -2,15 +2,22 @@ function calcTotalTokenCNerf(){
     var nerf = {
         point : new ExpantaNum(1),
         AP: new ExpantaNum(1),
+        APL: new ExpantaNum(1),
         pp : new ExpantaNum(1),
         ts : new ExpantaNum(1),
+        APU : new ExpantaNum(1),
         AC : new ExpantaNum(0)
     }
     var cha = calcChaNow()
     nerf.point = nerf.point.mul(ExpantaNum(1.66).pow(cha[2]))
-    nerf.AP = nerf.AP.mul(ExpantaNum(1.33).pow(cha[2]))
+    nerf.AP = nerf.AP.mul(ExpantaNum(1.33).pow(cha[2].pow(4)))
+    if(cha[2].gte(2)){
+        nerf.AP = nerf.AP.mul(5)
+        nerf.APL = nerf.APL.mul(ExpantaNum(1.25).pow(cha[2].sub(1).pow(2)))
+    }
     nerf.pp = nerf.pp.mul(ExpantaNum(1.66).pow(cha[3]))
     nerf.ts = nerf.ts.mul(ExpantaNum(2).pow(cha[3]))
+    nerf.APU = nerf.APU.mul(ExpantaNum(1.5).pow(cha[3]))
     nerf.AC = cha[4]
     return nerf
 }
@@ -57,7 +64,7 @@ addLayer("t", {
     baseResource: "P的指数",
     baseAmount() {return player.points.add(1).log10()},
     requires(){return new ExpantaNum("6e7")},
-    exponent: 2,
+    exponent: 3,
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new ExpantaNum(1)
@@ -79,7 +86,7 @@ addLayer("t", {
         return eff
     },
     onPrestige(gain){player.t.tokens[player.t.currentC] = player.t.tokens[player.t.currentC].add(gain);doACreset(false)},
-    effectDescription(){return `使pp*${this.effect()}`},
+    effectDescription(){return `使pp*${format(this.effect(),0)}`},
     clickables: {
         11: {
             canClick(){return true},
@@ -94,7 +101,7 @@ addLayer("t", {
             effDesp(){
                 return "使得点数获取和时间速率^"+format(this.effect(),2)
             },
-            onClick(){doACreset(false);player.t.currentC = this.id}
+            onClick(){doACreset(false,this.id);player.t.currentC = this.id}
         },
         12: {
             canClick(){return true},
@@ -108,7 +115,21 @@ addLayer("t", {
             effDesp(){
                 return "使得c11效果和时间速率^"+format(this.effect(),2)
             },
-            onClick(){doACreset(false);player.t.currentC = this.id}
+            onClick(){doACreset(false,this.id);player.t.currentC = this.id}
+        },
+        21: {
+            canClick(){return true},
+            display() {var baseSTR = "C" + this.id;if(player.t.currentC == this.id) baseSTR += "<br>您在该挑战中!";baseSTR += `<br>您有${player.t.tokens[this.id]}个${this.id}代币(token)`;baseSTR += this.effDesp();return baseSTR},
+            effect(){
+                var eff = player.t.tokens[this.id].add(1).pow(0.616)
+                eff = powsoftcap(eff,e(4),3)
+                eff = powsoftcap(eff,e(10),5)
+                return eff
+            },
+            effDesp(){
+                return "使得倍增器效果^"+format(this.effect(),2)
+            },
+            onClick(){doACreset(false,this.id);player.t.currentC = this.id}
         },
     },
     /*upgrades: {
@@ -276,42 +297,79 @@ addLayer("t", {
         0: {
             requirementDescription: "1:1medal",
             effectDescription: "自动p升级.",
-            done() { return player.t.points.gte(1) }
+            done() { return player.t.points.gte(1) },
         },
         1: {
             requirementDescription: "2:2medal",
             effectDescription: "保留第三排p升级.",
-            done() { return player.t.points.gte(2) }
+            done() { return player.t.points.gte(2) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
         2: {
             requirementDescription: "3:3medal",
             effectDescription: "保留au13.",
-            done() { return player.t.points.gte(3) }
+            done() { return player.t.points.gte(3) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
         3: {
             requirementDescription: "4:4medal",
             effectDescription: "保留am24.(a里程碑24)",
-            done() { return player.t.points.gte(4) }
+            done() { return player.t.points.gte(4) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
         4: {
             requirementDescription: "5:5medal",
             effectDescription: "g层级不重置任何东西.",
-            done() { return player.t.points.gte(5) }
+            done() { return player.t.points.gte(5) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
         5: {
             requirementDescription: "6:6medal",
             effectDescription: "保留g里程碑.",
-            done() { return player.t.points.gte(6) }
+            done() { return player.t.points.gte(6) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
         6: {
             requirementDescription: "7:8medal",
             effectDescription: "每秒获得1%的rau.",
-            done() { return player.t.points.gte(8) }
+            done() { return player.t.points.gte(8) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
         7: {
             requirementDescription: "8:10medal",
             effectDescription: "允许购买最大a可购买项.",
-            done() { return player.t.points.gte(10) }
+            done() { return player.t.points.gte(10) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        8: {
+            requirementDescription: "9:5 C12token",
+            effectDescription: "你开始时保留100个发生器,发生器效果改为立即起效,发生器产生间隔的指数增加.(^2->^5)",
+            done() { return player.t.tokens[12].gte(5) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        9: {
+            requirementDescription: "10:20medal",
+            effectDescription: "发生器能量效果e1.25e7软上限减弱(0.5次根->0.3次根),ap上限+medal.",
+            done() { return player.t.points.gte(20) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        10: {
+            requirementDescription: "11:50medal",
+            effectDescription: "再次减弱ap上限的软上限(0.2次log->0.1次log),自动ap购买项.保留am15.",
+            done() { return player.t.points.gte(50) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        11: {
+            requirementDescription: "12:1 C21token",
+            effectDescription: "倍增器效果^10,每秒获得10%的发生器.",
+            done() { return player.t.tokens[21].gte(1) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        12: {
+            requirementDescription: "13:100medal",
+            effectDescription: "如果你在对应挑战中达到1token,那么进入对应挑战保留ap升级.",
+            done() { return player.t.points.gte(100) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
     },
     //important!!!
@@ -338,7 +396,7 @@ addLayer("t", {
         return gain.floor()
     },
     prestigeButtonText(){
-        return "+ "+formatWhole(layers.t.getResetGain())+" 代币&奖牌"+"<br>基础公式: (x/6e7)^2"
+        return "+ "+formatWhole(layers.t.getResetGain())+" 代币&奖牌"+"<br>基础公式: (x/6e7)^3"
     },
     hotkeys: [
         {key: "t", description: "T: 代币转", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
@@ -391,8 +449,8 @@ addLayer("t", {
                 ["main-display",
                 ["display-text", function() {return "token挑战中一共有四种挑战,效果分别是:"}],
                 ["display-text", function() {return "C1^n(n代表次数) : 无效果."}],
-                ["display-text", function() {return "C2^n : 点数^0.6^n , AP ^0.75^n."}],
-                ["display-text", function() {return "C3^n : pp^0.6^n , ts ^0.5^n + C2^n."}],
+                ["display-text", function() {return "C2^n : 点数^0.6^n , AP ^0.75^n^4,若n>=2则再次ap^0.2,并使ap上限^0.8^(n-1)^2.(软上限后)"}],
+                ["display-text", function() {return "C3^n : pp^0.6^n , ts ^0.5^n , AP升级价格增长^1.5^n + C2^n."}],
                 ["display-text", function() {return "C4^n : n=1:开启AC11 n=2:开启AC12. n=3:同时获得前两个效果. + C3^n"}],
                 ["blank", "30px"],
                 ["display-text", function() {return "Cab = Ca^2 + Cb"}],
@@ -401,8 +459,10 @@ addLayer("t", {
                 ["display-text", function() {return "当前减益："}],
                 ["display-text", function() {return `点数变为其${format(player.t.nerf.point)}次根`}],
                 ["display-text", function() {return `AP变为其${format(player.t.nerf.AP)}次根`}],
+                ["display-text", function() {return `AP上限变为其${format(player.t.nerf.APL)}次根`}],
                 ["display-text", function() {return `pp变为其${format(player.t.nerf.pp)}次根`}],
                 ["display-text", function() {return `ts变为其${format(player.t.nerf.ts)}次根`}],
+                ["display-text", function() {return `AP升级价格增长变为其${format(player.t.nerf.APL)}次方`}],
                 ["display-text", function() {
                     if(player.t.nerf.AC.eq(1)) return `开启AC11`
                     if(player.t.nerf.AC.eq(2)) return `开启AC12`
