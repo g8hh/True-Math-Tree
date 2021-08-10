@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "1.1-beta",
+	num: "1.1-beta-0.1",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v1.1-beta-0.1</h3><br>
+		- 重新平衡token,添加一些token里程碑,当前endgame:约e100 000 000(e1e8)点数,e20 000 000(e2e7)增量点,e2e6pp,2e23高德纳箭头点.<br><br>
 	<h3>v1.1-beta</h3><br>
 		- 添加亿点内容,重新平衡部分内容,当前endgame:约e100 000 000(e1e8)点数,e20 000 000(e2e7)增量点,e2e6pp,2e23高德纳箭头点.<br><br>
 	<h3>v1.02</h3><br>
@@ -84,7 +86,7 @@ function canGenPoints(){
 // Calculate points/sec!
 function getPointGen(calc = false) {
 	if(!canGenPoints && !calc) return new ExpantaNum(0)
-	var gain = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1).mul(player.c.tickspeed)
+	var gain = player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1).mul(tickspeed)
 	
 	if(hasUpgrade("p",12)) gain = gain.mul(upgradeEffect("p",12))
 	if(hasUpgrade("p",14)) gain = gain.mul(upgradeEffect("p",14))
@@ -128,7 +130,7 @@ var displayThings = [
 	function(){return `P `+(hasUpgrade("p",13)?"+":"=")+` <text style="color: lime">b</text>↑<sup style="color: lime">a</sup>Min(<text style="color: lime">c</text>,<text style="color: lime">cmax</text>)-<text style="color: lime">b</text> (= ${format(player.c.basepoints1,5)}↑<sup>${format(player.c.arrows,3)}</sup>${format(player.c.basepoints2,2)}-${format(player.c.basepoints1,5)})`+(hasUpgrade("p",13)?`/s = +${format(player.c.basepoints1.arrow(player.c.arrows)(player.c.basepoints2).sub(player.c.basepoints1),5)}/s`:"")},
 	function(){return `a=${format(player.c.arrows,2)}(3) , b=${format(player.c.basepoints1,5)}(1.0001) , c=t/20+1=${format(player.c.tbasepoints2)}(1) , cmax=${format(getMaxBP(),2)} , t = ${format(player.c.tick)}(0)`},
 	function(){
-		var basestr = `时间速率(ts) = ${format(player.c.tickspeed)}`
+		var basestr = `时间速率(ts) = ${format(tickspeed)}`
 		if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) basestr = basestr + `(${format(calcTickspeed())})`
 		return basestr
 	},

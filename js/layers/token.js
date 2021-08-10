@@ -3,12 +3,14 @@ function calcTotalTokenCNerf(){
         point : new ExpantaNum(1),
         AP: new ExpantaNum(1),
         pp : new ExpantaNum(1),
+        ts : new ExpantaNum(1),
         AC : new ExpantaNum(0)
     }
     var cha = calcChaNow()
     nerf.point = nerf.point.mul(ExpantaNum(1.66).pow(cha[2]))
     nerf.AP = nerf.AP.mul(ExpantaNum(1.33).pow(cha[2]))
-    nerf.pp = nerf.pp.mul(ExpantaNum(1.25).pow(cha[3]))
+    nerf.pp = nerf.pp.mul(ExpantaNum(1.66).pow(cha[3]))
+    nerf.ts = nerf.ts.mul(ExpantaNum(2).pow(cha[3]))
     nerf.AC = cha[4]
     return nerf
 }
@@ -46,16 +48,17 @@ addLayer("t", {
             point : new ExpantaNum(1),
             AP: new ExpantaNum(1),
             pp : new ExpantaNum(1),
+            ts : new ExpantaNum(1),
             AC : new ExpantaNum(0)
         }
     }},
     color: "CC66CC",
     resource: "奖牌(medal)", // Name of prestige currency
-    baseResource: "ap",
-    baseAmount() {return player.a.points},
-    requires(){return new ExpantaNum(1.25e23)},
+    baseResource: "P的指数",
+    baseAmount() {return player.points.add(1).log10()},
+    requires(){return new ExpantaNum("6e7")},
+    exponent: 2,
     type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
-    exponent: 5,
     gainMult() { // Calculate the multiplier for main currency from bonuses
         mult = new ExpantaNum(1)
         //if(hasUpgrade("p",11)) mult = mult.mul(upgradeEffect("p",11))
@@ -285,6 +288,31 @@ addLayer("t", {
             effectDescription: "保留au13.",
             done() { return player.t.points.gte(3) }
         },
+        3: {
+            requirementDescription: "4:4medal",
+            effectDescription: "保留am24.(a里程碑24)",
+            done() { return player.t.points.gte(4) }
+        },
+        4: {
+            requirementDescription: "5:5medal",
+            effectDescription: "g层级不重置任何东西.",
+            done() { return player.t.points.gte(5) }
+        },
+        5: {
+            requirementDescription: "6:6medal",
+            effectDescription: "保留g里程碑.",
+            done() { return player.t.points.gte(6) }
+        },
+        6: {
+            requirementDescription: "7:8medal",
+            effectDescription: "每秒获得1%的rau.",
+            done() { return player.t.points.gte(8) }
+        },
+        7: {
+            requirementDescription: "8:10medal",
+            effectDescription: "允许购买最大a可购买项.",
+            done() { return player.t.points.gte(10) }
+        },
     },
     //important!!!
     update(diff){
@@ -310,7 +338,7 @@ addLayer("t", {
         return gain.floor()
     },
     prestigeButtonText(){
-        return "+ "+formatWhole(layers.t.getResetGain())+" 代币&奖牌"
+        return "+ "+formatWhole(layers.t.getResetGain())+" 代币&奖牌"+"<br>基础公式: (x/6e7)^2"
     },
     hotkeys: [
         {key: "t", description: "T: 代币转", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
@@ -364,7 +392,7 @@ addLayer("t", {
                 ["display-text", function() {return "token挑战中一共有四种挑战,效果分别是:"}],
                 ["display-text", function() {return "C1^n(n代表次数) : 无效果."}],
                 ["display-text", function() {return "C2^n : 点数^0.6^n , AP ^0.75^n."}],
-                ["display-text", function() {return "C3^n : pp^0.8^n + C2^n."}],
+                ["display-text", function() {return "C3^n : pp^0.6^n , ts ^0.5^n + C2^n."}],
                 ["display-text", function() {return "C4^n : n=1:开启AC11 n=2:开启AC12. n=3:同时获得前两个效果. + C3^n"}],
                 ["blank", "30px"],
                 ["display-text", function() {return "Cab = Ca^2 + Cb"}],
@@ -374,6 +402,7 @@ addLayer("t", {
                 ["display-text", function() {return `点数变为其${format(player.t.nerf.point)}次根`}],
                 ["display-text", function() {return `AP变为其${format(player.t.nerf.AP)}次根`}],
                 ["display-text", function() {return `pp变为其${format(player.t.nerf.pp)}次根`}],
+                ["display-text", function() {return `ts变为其${format(player.t.nerf.ts)}次根`}],
                 ["display-text", function() {
                     if(player.t.nerf.AC.eq(1)) return `开启AC11`
                     if(player.t.nerf.AC.eq(2)) return `开启AC12`

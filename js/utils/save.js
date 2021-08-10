@@ -294,6 +294,7 @@ function exportSave() {
 	document.body.removeChild(el);
 }
 function importSave(imported = undefined, forced = false) {
+	ticks = 20
 	if (imported === undefined){
 		imported = prompt("Paste your save here")
 	};

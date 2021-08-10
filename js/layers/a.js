@@ -2,12 +2,14 @@ function checkAroundUpg(UPGlayer,place){
     return hasUpgrade(UPGlayer,place-1)||hasUpgrade(UPGlayer,place+1)||hasUpgrade(UPGlayer,place-10)||hasUpgrade(UPGlayer,place+10)
 }
 function getAPlimit(){
+    ticks -= 1
     var limit = new ExpantaNum(50)
+    if(ticks >= 0) return limit
     if(hasMilestone("a",8)) limit = limit.pow((player.a.upgrades.length/5)**2+1)
     if(hasUpgrade("a",11)) limit = limit.mul(upgradeEffect("a",11))
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
     limit = limit.mul(buyableEffect("a",11))
-    if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.6)
+    if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
     limit = logsoftcap(limit,e(1e20),e(hasMilestone("a",28)? 0.2:0.5))
     return limit.floor()
 }
@@ -21,6 +23,7 @@ function AUMilestonekeep(){
     if(hasMilestone("a",24)) kp.push(24)
     if(hasMilestone("a",26)) kp.push(26)
     if(hasMilestone("a",33)) kp.push(33)
+    if(hasMilestone("t",3)) kp.push(23)
     return kp
 }
 function getResetUGain(){
@@ -38,6 +41,7 @@ function doACreset(resetToken = true){
     var kp = [0,7,24]
     if(hasMilestone("a",26)) kp.push(26)
     if(hasMilestone("a",33)) kp.push(33)
+    if(hasMilestone("t",3)) kp.push(23)
     player.a.milestones = kp
     for(i=2;i>=0;i--) rowReset(i,"a")
     player.points = zero
@@ -724,20 +728,22 @@ addLayer("a", {
             display() { return `基于最高pp倍增b和cmax.这同时影响ap上限.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}ap<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
             canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
             buy() {
-                //if(hasUpgrade("p",34)){this.buyMax();return}
+                if(hasMilestone("t",7)){this.buyMax();return}
                 if(!hasUpgrade("p",52)) player[this.layer].points = player[this.layer].points.sub(this.cost())
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             buyMax(){
-                var basep = player.i.points
+                var basep = player.a.points
+                if(hasMilestone("a",29)) basep = basep.mul(layers.g.effect2())
+                if(hasUpgrade("p",55)){
+                    basep = basep.mul(upgradeEffect("p",55))
+                    basep = basep.root(0.75)
+                }
                 if(hasMilestone("a",18)) basep = basep.pow(1.1)
                 if(hasMilestone("a",19)) basep = basep.pow(1.1)
-                if(hasUpgrade("p",55)){
-                    basep = basep.root(0.75)
-                    basep = basep.mul(upgradeEffect("p",55))
-                }
-                if(hasMilestone("a",29)) basep = basep.mul(layers.g.effect2())
-                var c = basep.add(1).pow(3).logBase(2).root(1.2).sub(40).sub(getBuyableAmount(this.layer, this.id)).add(1).min(1/*upgradeEffect("p",31)*/).floor().max(0)
+
+                
+                var c = basep.add(1).pow(3).logBase(2).root(1.2).sub(40).sub(getBuyableAmount(this.layer, this.id)).add(1).floor().max(0)
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
             },
             effect(){
@@ -771,20 +777,22 @@ addLayer("a", {
             display() { return `基于ap倍增cmax.这同时影响上一个ap可重复购买项.<br />x${format(buyableEffect(this.layer,this.id),2)}.<br />费用:${format(this.cost(getBuyableAmount(this.layer, this.id)))}ap<br>等级:${formatWhole(getBuyableAmount(this.layer, this.id))}` },
             canAfford() { return player[this.layer].points.gte(this.cost().add(1)) },
             buy() {
-                //if(hasUpgrade("p",34)){this.buyMax();return}
+                if(hasMilestone("t",7)){this.buyMax();return}
                 if(!hasUpgrade("p",52)) player[this.layer].points = player[this.layer].points.sub(this.cost())
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(1))
             },
             buyMax(){
-                var basep = player.i.points
+                var basep = player.a.points
+                if(hasMilestone("a",29)) basep = basep.mul(layers.g.effect2())
+                if(hasUpgrade("p",55)){
+                    basep = basep.mul(upgradeEffect("p",55))
+                    basep = basep.root(0.75)
+                }
                 if(hasMilestone("a",18)) basep = basep.pow(1.1)
                 if(hasMilestone("a",19)) basep = basep.pow(1.1)
-                if(hasUpgrade("p",55)){
-                    basep = basep.root(0.75)
-                    basep = basep.mul(upgradeEffect("p",55))
-                }
-                if(hasMilestone("a",29)) basep = basep.mul(layers.g.effect2())
-                var c = basep.add(1).pow(4).logBase(2).root(1.35).sub(35).sub(getBuyableAmount(this.layer, this.id)).add(1).min(1/*upgradeEffect("p",31)*/).floor().max(0)
+
+                
+                var c = basep.add(1).pow(4).logBase(2).root(1.35).sub(35).sub(getBuyableAmount(this.layer, this.id)).add(1).floor().max(0)
                 setBuyableAmount(this.layer, this.id, getBuyableAmount(this.layer, this.id).add(c))
             },
             effect(){
@@ -842,6 +850,7 @@ addLayer("a", {
         player.a.pointbest = player.points.max(player.a.pointbest)
         player.a.ppbest = player.p.points.max(player.a.ppbest)
         if(hasMilestone("a",24)) player.a.points = player.a.points.max(3)
+        if(hasMilestone("t",6)) player.a.resetU = player.a.resetU.add(getResetUGain().mul(diff*0.01))
     },
     milestones: {
         0: {
