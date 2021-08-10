@@ -27,7 +27,10 @@ addLayer("b", {
     layerShown(){return hasMilestone("a",23)},
     effect(){
         var eff = two.pow(player[this.layer].points)
+        eff = eff.pow(tokenEffect(21))
         if(!hasMilestone("a",32)) eff = powsoftcap(eff,e("e100000"),e(hasMilestone("g",0) ? hasMilestone("g",3)? 4 : 5 : 10))
+        if(hasMilestone("t",11)) eff = eff.pow(10)
+        eff = logsoftcap(eff,e("e2e8"),0.5)
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
         return eff
     },
@@ -238,8 +241,8 @@ addLayer("g", {
     effect(){
         var eff = two.pow(player[this.layer].power.root(3))
         eff = logsoftcap(eff,e("e40000"),0.1)
-        eff = logsoftcap(eff,e("e7500000"),0.5)
-        eff = logsoftcap(eff,e("e125e5"),0.4)
+        eff = logsoftcap(eff,e("e7500000"),0.4)
+        eff = logsoftcap(eff,e("e125e5"),hasMilestone("t",9)?0.3:0.5)
         //eff = logsoftcap(eff,e("e2e7"),1)
         return eff
     },
@@ -249,7 +252,10 @@ addLayer("g", {
         //eff = logsoftcap(eff,e("e40000"),0.125)
         return eff
     },
-    effectDescription(){return `产生${format(this.proc())}能量/log10(t/e128000)^2(仅当t>e128000时)<br>你有${format(player.g.power)}能量,能量使得ts -> ts*${format(this.effect())}`},
+    effectDescription(){
+        if(!hasMilestone("t",8)) return `产生${format(this.proc())}能量/log10(t/e128000)^2(仅当t>e128000时)<br>你有${format(player.g.power)}能量,能量使得ts -> ts*${format(this.effect())}`
+        else return `产生${format(this.proc())}能量/log10(t+10)^3<br>你有${format(player.g.power)}能量,能量使得ts -> ts*${format(this.effect())}`
+    },
     //clickables: {
         //part1
         //11: {
@@ -339,7 +345,13 @@ addLayer("g", {
     resetsNothing(){return hasMilestone("t",4)},
     //important!!!
     update(diff){
-        if(player.c.tick.gte("e128000")) player.g.power = this.proc().mul(player.c.tick.div("e128000").log10().pow(2)).max(player.g.power)
+        if(player.c.tick.gte("e128000") && !hasMilestone("t",8)) player.g.power = this.proc().mul(player.c.tick.div("e128000").log10().pow(2)).max(player.g.power)
+        if(hasMilestone("t",8)){
+            player.g.power = this.proc().mul(player.c.tick.add(10).log10().pow(5)).max(player.g.power)
+            player.g.points = player.g.points.max(100)
+        }
+        var tick = diff
+        if(hasMilestone("t",11)) player.g.points = player.g.points.add(this.getResetGain().mul(Math.min(tick,1)))
         //var incproc = buyableEffect("i",11)
         //player.i.points = player.i.points.add(incproc.mul(diff).mul(tickspeed)).max(1)
 
