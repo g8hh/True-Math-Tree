@@ -4,14 +4,17 @@ function calcTickspeed(){
     if(hasUpgrade("p",21)) tickspeed = tickspeed.mul(upgradeEffect("p",21))
     if(hasUpgrade("p",41)) tickspeed = tickspeed.mul(upgradeEffect("p",41))
     //token
+    tickspeed = tickspeed.pow(player.t.nerf.ts)
     tickspeed = tickspeed.pow(tokenEffect(11))
     tickspeed = tickspeed.pow(tokenEffect(12))
+    
 
     if(tickspeed.gte(1e18)){
         var sc = 3
         if(hasUpgrade("a",15)) sc = 1.25
         tickspeed = tickspeed.root(sc).mul(1e18**(1-1/sc))
     }
+
     tickspeed = logsoftcap(tickspeed,e("e150000"),hasMilestone("a",28)? 0.175:0.5)
     tickspeed = tickspeed.mul(layers.b.effect())
     tickspeed = tickspeed.mul(layers.g.effect())
@@ -19,6 +22,7 @@ function calcTickspeed(){
     tickspeed = logsoftcap(tickspeed,e("e360000"),0.05)
     tickspeed = logsoftcap(tickspeed,e("e400000"),0.1)
     tickspeed = logsoftcap(tickspeed,e("e600000"),0.25)
+    if(ticks > 0) return one
     return tickspeed
 }
 function getbp1(){
@@ -43,6 +47,8 @@ function getMaxBP(){
     return cmax
 }
 var proc = new ExpantaNum(0)
+var ticks = 20
+var tickspeed = new ExpantaNum(0)
 
 addLayer("c", {
     name: "calc", // This is optional, only used in a few places, If absent it just uses the layer id.
@@ -55,7 +61,7 @@ addLayer("c", {
         basepoints1: new ExpantaNum(1.0001),
         basepoints2: new ExpantaNum(1),
         tbasepoints2: new ExpantaNum(1),
-        tickspeed: new ExpantaNum(0),
+        //tickspeed: new ExpantaNum(0),
         tick: new ExpantaNum(0),
     }},
     color: "lime",
@@ -103,9 +109,9 @@ addLayer("c", {
 
     //important!!!
     update(diff){        
-        player.c.tickspeed = calcTickspeed().max(1)
-        if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) player.c.tickspeed = player.c.tickspeed.min(10)
-        player.c.tick = player.c.tick.add(player.c.tickspeed.mul(diff))
+        tickspeed = calcTickspeed().max(1)
+        if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) tickspeed = tickspeed.min(10)
+        player.c.tick = player.c.tick.add(tickspeed.mul(diff))
         player.c.basepoints2 = player.c.tick.div(20).add(1).min(getMaxBP())
         player.c.tbasepoints2 = player.c.tick.div(20).add(1)
         /*

@@ -102,6 +102,7 @@ addLayer("p", {
             unlocked(){return hasUpgrade("p",13)},
             effect(){
                 var baseEff = player.p.points.pow(0.25).add(1)
+                if(ticks >= 0) return one
                 if(!hasUpgrade("a",14)) baseEff = baseEff.pow(Math.sin(player.c.tick.pow(1.5).div(10).mod(360).toNumber())**2)
                 else baseEff = baseEff.pow(1.5)
                 if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))

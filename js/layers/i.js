@@ -198,7 +198,7 @@ addLayer("i", {
     //important!!!
     update(diff){
         var incproc = buyableEffect("i",11)
-        player.i.points = player.i.points.add(incproc.mul(diff).mul(player.c.tickspeed)).max(1)
+        player.i.points = player.i.points.add(incproc.mul(diff).mul(tickspeed)).max(1)
 
         //auto
         for(row=1;row<=1;row++){
