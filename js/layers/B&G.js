@@ -410,6 +410,7 @@ addLayer("g", {
         return "+ "+formatWhole(this.getResetGain())+" "+this.resource
     },*/
     doReset(layer){
+        if(layer = this.layer) return
         if(hasMilestone("t",5)){
             layerDataReset(this.layer,["milestones"])
         }
