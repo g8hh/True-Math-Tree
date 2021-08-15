@@ -6,8 +6,11 @@ function calcTotalTokenCNerf(){
         pp : new ExpantaNum(1),
         ts : new ExpantaNum(1),
         APU : new ExpantaNum(1),
+        RAU : new ExpantaNum(1),
+        au31 : false,
         AC : new ExpantaNum(0)
     }
+    //^(1/Max((log10(P)/1e7)^2,1))
     var cha = calcChaNow()
     nerf.point = nerf.point.mul(ExpantaNum(1.66).pow(cha[2]))
     nerf.AP = nerf.AP.mul(ExpantaNum(1.33).pow(cha[2].pow(4)))
@@ -15,9 +18,11 @@ function calcTotalTokenCNerf(){
         nerf.AP = nerf.AP.mul(5)
         nerf.APL = nerf.APL.mul(ExpantaNum(1.25).pow(cha[2].sub(1).pow(2)))
     }
-    nerf.pp = nerf.pp.mul(ExpantaNum(1.66).pow(cha[3]))
+    nerf.pp = nerf.pp.mul(ExpantaNum(4).pow(cha[3].pow(1.5)))
     nerf.ts = nerf.ts.mul(ExpantaNum(2).pow(cha[3]))
-    nerf.APU = nerf.APU.mul(ExpantaNum(1.5).pow(cha[3]))
+    nerf.APU = nerf.APU.mul(ExpantaNum(3.5).pow(cha[3].pow(0.6)))
+    nerf.RAU = nerf.RAU.mul(ExpantaNum(3).pow(cha[3]))
+    if(!cha[2].eq(0)) nerf.au31 = true
     nerf.AC = cha[4]
     return nerf
 }
@@ -96,6 +101,7 @@ addLayer("t", {
                 eff = eff.pow(tokenEffect(12))
                 eff = powsoftcap(eff,e(1.5),2)
                 eff = powsoftcap(eff,e(3),4)
+                eff = logsoftcap(eff,e(20),0.33)
                 return eff
             },
             effDesp(){
@@ -117,6 +123,22 @@ addLayer("t", {
             },
             onClick(){doACreset(false,this.id);player.t.currentC = this.id}
         },
+        13: {
+            canClick(){return true},
+            display() {var baseSTR = "C" + this.id;if(player.t.currentC == this.id) baseSTR += "<br>您在该挑战中!";baseSTR += `<br>您有${player.t.tokens[this.id]}个${this.id}代币(token)`;baseSTR += this.effDesp();return baseSTR},
+            effect(){
+                var eff = player.t.tokens[this.id].mul(31.4).add(1).pow(0.616)
+                //eff = powsoftcap(eff,e(4),3)
+                //eff = powsoftcap(eff,e(10),5)
+                eff = logsoftcap(eff,e(1000),0.2)
+                eff = powsoftcap(eff,e(1000),2)
+                return eff
+            },
+            effDesp(){
+                return "使得增量点效果^"+format(this.effect(),2)
+            },            
+            onClick(){doACreset(false,this.id);player.t.currentC = this.id}
+        },
         21: {
             canClick(){return true},
             display() {var baseSTR = "C" + this.id;if(player.t.currentC == this.id) baseSTR += "<br>您在该挑战中!";baseSTR += `<br>您有${player.t.tokens[this.id]}个${this.id}代币(token)`;baseSTR += this.effDesp();return baseSTR},
@@ -131,6 +153,22 @@ addLayer("t", {
             },
             onClick(){doACreset(false,this.id);player.t.currentC = this.id}
         },
+        /*
+        22: {
+            canClick(){return true},
+            display() {var baseSTR = "C" + this.id;if(player.t.currentC == this.id) baseSTR += "<br>您在该挑战中!";baseSTR += `<br>您有${player.t.tokens[this.id]}个${this.id}代币(token)`;baseSTR += this.effDesp();return baseSTR},
+            effect(){
+                var eff = player.t.tokens[this.id].add(1).pow(0.616)
+                eff = powsoftcap(eff,e(4),3)
+                eff = powsoftcap(eff,e(10),5)
+                return eff
+            },
+            effDesp(){
+                return "使得倍增器效果^"+format(this.effect(),2)
+            },
+            onClick(){doACreset(false,this.id);player.t.currentC = this.id}
+        },
+        */
     },
     /*upgrades: {
         11: {
@@ -367,8 +405,20 @@ addLayer("t", {
         },
         12: {
             requirementDescription: "13:100medal",
-            effectDescription: "如果你在对应挑战中达到1token,那么进入对应挑战保留ap升级.",
+            effectDescription: "如果你在对应挑战中达到1token,那么进入对应挑战保留ap升级和里程碑.",
             done() { return player.t.points.gte(100) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        13: {
+            requirementDescription: "14:500medal",
+            effectDescription: "点数^2.保留ap里程碑14.",
+            done() { return player.t.points.gte(500) },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
+        14: {
+            requirementDescription: "15:2500c13token",
+            effectDescription: "增量点^1.5.软上限后.每秒获得100%的发生器.",
+            done() { return player.t.tokens[13].gte(2500) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
     },
@@ -391,7 +441,8 @@ addLayer("t", {
         var gain = new ExpantaNum(1)
         gain = gain.mul(this.baseAmount().div(this.requires()).pow(this.exponent)).pow(this.gainExp()).mul(this.gainMult())
         //if(gain.gte(5)) gain = gain.pow(0.75).mul(5**0.25)
-        //if(gain.gte(100000)) gain = gain.cbrt().mul(100000**0.66666666666)
+        gain = powsoftcap(gain,e(10),2)
+        gain = logsoftcap(gain,e(1000),0.2)
         //if(player.a.points.add(gain).gt(getAPlimit())) return getAPlimit().sub(player.a.points).max(0)
         return gain.floor()
     },
@@ -450,7 +501,7 @@ addLayer("t", {
                 ["display-text", function() {return "token挑战中一共有四种挑战,效果分别是:"}],
                 ["display-text", function() {return "C1^n(n代表次数) : 无效果."}],
                 ["display-text", function() {return "C2^n : 点数^0.6^n , AP ^0.75^n^4,若n>=2则再次ap^0.2,并使ap上限^0.8^(n-1)^2.(软上限后)"}],
-                ["display-text", function() {return "C3^n : pp^0.6^n , ts ^0.5^n , AP升级价格增长^1.5^n + C2^n."}],
+                ["display-text", function() {return "C3^n : pp^0.25^n^1.5 , ts ^0.5^n , AP升级价格增长^3.5^n^0.6 RAU^0.33^n , au31只计算当前ap + C2^n."}],
                 ["display-text", function() {return "C4^n : n=1:开启AC11 n=2:开启AC12. n=3:同时获得前两个效果. + C3^n"}],
                 ["blank", "30px"],
                 ["display-text", function() {return "Cab = Ca^2 + Cb"}],
@@ -462,7 +513,9 @@ addLayer("t", {
                 ["display-text", function() {return `AP上限变为其${format(player.t.nerf.APL)}次根`}],
                 ["display-text", function() {return `pp变为其${format(player.t.nerf.pp)}次根`}],
                 ["display-text", function() {return `ts变为其${format(player.t.nerf.ts)}次根`}],
-                ["display-text", function() {return `AP升级价格增长变为其${format(player.t.nerf.APL)}次方`}],
+                ["display-text", function() {return `AP升级价格增长变为其${format(player.t.nerf.APU)}次方`}],
+                ["display-text", function() {return `RAU变为其${format(player.t.nerf.RAU)}次根`}],
+                ["display-text", function() {return `au31是否只计算当前ap:${format(player.t.nerf.au31)?"是":"否"}`}],
                 ["display-text", function() {
                     if(player.t.nerf.AC.eq(1)) return `开启AC11`
                     if(player.t.nerf.AC.eq(2)) return `开启AC12`
