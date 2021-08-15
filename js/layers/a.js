@@ -27,6 +27,7 @@ function AUMilestonekeep(){
     if(hasMilestone("a",33)) kp.push(33)
     if(hasMilestone("t",3)) kp.push(23)
     if(hasMilestone("t",10)) kp.push(14)
+    if(hasMilestone("t",13)) kp.push(13)
     return kp
 }
 function getResetUGain(){
@@ -36,23 +37,29 @@ function getResetUGain(){
     resetUgain = new OmegaNum(resetUgain)
     if(hasMilestone("a",21)) resetUgain = resetUgain.mul(player.a.points.add(10).log10().pow(0.75))
     if(inChallenge("a",12) || hasChallenge("a",12)) resetUgain = resetUgain.mul(logsoftcap(calcTickspeed().add(10).log10(),e(1000),e(0.2)))
+    resetUgain = resetUgain.root(player.t.nerf.RAU)
     return resetUgain.floor()
 }
 
 function doACreset(resetToken = true,id = 11){
     if(resetToken) layerDataReset("t",[])
     var kp = [0,7,24]
-    if(hasMilestone("a",26)) kp.push(26)
-    if(hasMilestone("a",33)) kp.push(33)
-    if(hasMilestone("t",3)) kp.push(23)
-    if(hasMilestone("t",10)) kp.push(14)
-    player.a.milestones = kp
+    if(!hasMilestone("t",12) || player.t.tokens[id].lt(1)){
+        if(hasMilestone("a",26)) kp.push(26)
+        if(hasMilestone("a",33)) kp.push(33)
+        if(hasMilestone("t",3)) kp.push(23)
+        if(hasMilestone("t",10)) kp.push(14)
+        if(hasMilestone("t",13)) kp.push(13)
+        player.a.milestones = kp
+    }else if(player.t.tokens[id].gte(1) && hasMilestone("t",12)){
+        if(!hasMilestone("a",11)) player.a.milestones.push(11)
+    }
     for(i=2;i>=0;i--) rowReset(i,"a")
     player.points = zero
     player.a.points = zero
     player.a.pointbest = zero
     player.a.ppbest = zero
-    if(player.t.tokens[id].lt(1)){
+    if(player.t.tokens[id].lt(1) || !hasMilestone("t",12)){
         player.a.upgrades = []
         if(hasMilestone("t",2)) player.a.upgrades = [13]
     }
@@ -60,7 +67,7 @@ function doACreset(resetToken = true,id = 11){
     player.a.costmult = one
     player.a.buyables[11] = zero
     player.a.buyables[12] = zero
-    if(hasMilestone("t",1)) player.p.upgrades = [31,32,33,34,35]
+    if(hasMilestone("t",1)&&!hasMilestone("a",4)) player.p.upgrades = [31,32,33,34,35]
     
 }
 
@@ -462,6 +469,7 @@ addLayer("a", {
             unlocked(){return checkAroundUpg("a",31)&&hasMilestone("a",13)},
             effect(){
                 var baseEff = player.a.best.pow(0.06)
+                if(player.t.nerf.au31) baseEff = player.a.points.pow(0.06)
                 baseEff = logsoftcap(baseEff,e(28),0.5)
                 return baseEff
             },
@@ -841,8 +849,8 @@ addLayer("a", {
         12: {
             name: "稳固时空",
             challengeDescription: "大于10的时间速率无效,但它以xlog10(x+10)的效率加成rau获取(于x1000达到软上限).点数获取^0.5.上个挑战的增量点获取加成被禁用.添加又一些新升级.",
-            canComplete(){return player.points.gte("e119000")},
-            goalDescription(){return format(ExpantaNum("e119000"))+"点数"},
+            canComplete(){return player.points.gte("e118000")},
+            goalDescription(){return format(ExpantaNum("e118000"))+"点数"},
             rewardDisplay(){return `保留该挑战的所有增益.`},
             unlocked(){return hasMilestone("a",26)},
             onEnter(){doACreset()},
@@ -851,8 +859,8 @@ addLayer("a", {
         21: {
             name: "代币游戏",
             challengeDescription: "增量无效.添加又一些新升级.解锁代币节点.点数获取^0.25.p11效果/1000.",
-            canComplete(){return player.points.gte("ee119000")},
-            goalDescription(){return format(ExpantaNum("ee119000"))+"点数"},
+            canComplete(){return player.t.currentC == 13 && player.points.gte("e2e7")},
+            goalDescription(){return "在tc13里获得e2e7点数"},
             rewardDisplay(){return `保留该挑战的所有增益.`},
             unlocked(){return hasMilestone("a",33)},
             onEnter(){doACreset()},

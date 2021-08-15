@@ -4,7 +4,6 @@ function calcTickspeed(){
     if(hasUpgrade("p",21)) tickspeed = tickspeed.mul(upgradeEffect("p",21))
     if(hasUpgrade("p",41)) tickspeed = tickspeed.mul(upgradeEffect("p",41))
     //token
-    tickspeed = tickspeed.pow(player.t.nerf.ts)
     tickspeed = tickspeed.pow(tokenEffect(11))
     tickspeed = tickspeed.pow(tokenEffect(12))
     
@@ -23,6 +22,10 @@ function calcTickspeed(){
     tickspeed = logsoftcap(tickspeed,e("e400000"),0.1)
     tickspeed = logsoftcap(tickspeed,e("e600000"),0.25)
     if(ticks > 0) return one
+
+    //tc3
+    tickspeed = tickspeed.root(player.t.nerf.ts)
+
     return tickspeed
 }
 function getbp1(){

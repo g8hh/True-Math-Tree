@@ -25,6 +25,7 @@ addLayer("i", {
         var eff = player[this.layer].points.root(2)
         if(inChallenge("a",11) || hasChallenge("a",11)) eff = eff.pow(3)
         if(inChallenge("a",21)) eff = one
+        eff = eff.pow(tokenEffect(13))
         return eff
     },
     effectDescription(){return `P -> P*${format(this.effect())}`},
@@ -94,6 +95,10 @@ addLayer("i", {
                 baseEff = powsoftcap(baseEff,e("e3000"),e(3))
                 baseEff = powsoftcap(baseEff,e("e400000"),e(5))
                 baseEff = logsoftcap(baseEff,e("e2e6"),e(hasMilestone("a",28)? 0.175:0.5))
+                //baseEff = logsoftcap(baseEff,e("e1e8"),e(0.1))
+
+                if(hasMilestone("t",14)) baseEff = baseEff.pow(1.5)
+
                 return baseEff
             },
             unlocked(){return true},

@@ -351,6 +351,7 @@ addLayer("g", {
             player.g.points = player.g.points.max(100)
         }
         var tick = diff
+        if(hasMilestone("t",14)) tick = tick * 10
         if(hasMilestone("t",11)) player.g.points = player.g.points.add(this.getResetGain().mul(Math.min(tick,1)))
         //var incproc = buyableEffect("i",11)
         //player.i.points = player.i.points.add(incproc.mul(diff).mul(tickspeed)).max(1)
@@ -410,7 +411,7 @@ addLayer("g", {
         return "+ "+formatWhole(this.getResetGain())+" "+this.resource
     },*/
     doReset(layer){
-        if(layer = this.layer) return
+        if(layer == this.layer || layer == "p" || layer == "g") return
         if(hasMilestone("t",5)){
             layerDataReset(this.layer,["milestones"])
         }
