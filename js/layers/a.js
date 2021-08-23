@@ -6,12 +6,16 @@ function getAPlimit(){
     var limit = new ExpantaNum(50)
     if(ticks >= 0) return limit
     if(hasMilestone("t",9)) limit = limit.add(player.t.points)
-    if(hasMilestone("a",8)) limit = limit.pow((player.a.upgrades.length/5)**2+1)
+    if(hasMilestone("a",8) && !hasMilestone("a",34)) limit = limit.pow((player.a.upgrades.length/5)**2+1)
+    if(hasMilestone("a",34)) limit = limit.pow((player.a.upgrades.length/5+1)**5)
     if(hasUpgrade("a",11)) limit = limit.mul(upgradeEffect("a",11))
     if(hasUpgrade("a",24)) limit = limit.mul(upgradeEffect("a",24))
     limit = limit.mul(buyableEffect("a",11))
     if(limit.gt(1000)) limit = limit.cbrt().mul(1000**0.66)
     limit = logsoftcap(limit,e(1e20),e(hasMilestone("a",28)? 0.2:0.5))
+    limit = logsoftcap(limit,e(1e35),e(0.4))
+    //limit = logsoftcap(limit,e(1e50),e(0.1))
+    //limit = powsoftcap(limit,e(1e35),e(3))
     limit = limit.root(player.t.nerf.APL)
     return limit.floor()
 }
@@ -25,6 +29,7 @@ function AUMilestonekeep(){
     if(hasMilestone("a",24)) kp.push(24)
     if(hasMilestone("a",26)) kp.push(26)
     if(hasMilestone("a",33)) kp.push(33)
+    if(hasMilestone("a",34)) kp.push(34)
     if(hasMilestone("t",3)) kp.push(23)
     if(hasMilestone("t",10)) kp.push(14)
     if(hasMilestone("t",13)) kp.push(13)
@@ -47,6 +52,7 @@ function doACreset(resetToken = true,id = 11){
     if(!hasMilestone("t",12) || player.t.tokens[id].lt(1)){
         if(hasMilestone("a",26)) kp.push(26)
         if(hasMilestone("a",33)) kp.push(33)
+        if(hasMilestone("a",34)) kp.push(34)
         if(hasMilestone("t",3)) kp.push(23)
         if(hasMilestone("t",10)) kp.push(14)
         if(hasMilestone("t",13)) kp.push(13)
@@ -62,14 +68,22 @@ function doACreset(resetToken = true,id = 11){
     if(player.t.tokens[id].lt(1) || !hasMilestone("t",12)){
         player.a.upgrades = []
         if(hasMilestone("t",2)) player.a.upgrades = [13]
+        player.a.costmult = one
     }
     player.a.resetU = zero
-    player.a.costmult = one
     player.a.buyables[11] = zero
     player.a.buyables[12] = zero
     if(hasMilestone("t",1)&&!hasMilestone("a",4)) player.p.upgrades = [31,32,33,34,35]
     
 }
+
+function getRandomAuCostWithSeed(seed){
+    return ten.pow(seed%6).mul(ten.pow(seed%4)).sqrt().mul(e(seed-30).pow(5)).pow(1.5)
+}
+function getRandomAuCostIncWithSeed(seed){
+    return e(seed-30).mul(two.pow(seed%3+1).pow(seed%7+1).sqrt()).pow((seed/20-1)**0.25*1.25)
+}
+
 
 addLayer("a", {
     name: "arrow", // This is optional, only used in a few places, If absent it just uses the layer id.
@@ -118,6 +132,7 @@ addLayer("a", {
         var p = hasMilestone("a",7) ? player[this.layer].best : player[this.layer].points
         if(hasUpgrade("p",61)) p = p.mul(player[this.layer].points)
         var eff = p.mul(10).add(1).root(8)
+        //if(inChallenge("a",22)) eff = one
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
         return eff
     },
@@ -125,6 +140,7 @@ addLayer("a", {
         var p = hasMilestone("a",7) ? player[this.layer].best : player[this.layer].points
         if(hasUpgrade("p",61)) p = p.mul(player[this.layer].points)
         var eff = p.mul(10).add(1).root(8)
+        //if(inChallenge("a",22)) eff = one
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
         return eff
     },    
@@ -135,12 +151,14 @@ addLayer("a", {
         if(hasMilestone("a",1)) eff = eff.pow(player.p.points.add(1).log10().add(1).log10().add(1).pow(2))
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
         if(hasMilestone("a",0)) eff = eff.mul(10)
+        //if(inChallenge("a",22)) eff = one
         return eff
     },
     effect4(){
         var eff = this.effect3()
         eff = eff.add(1).log10().add(1).pow(4).div(1000).add(1)
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
+        //if(inChallenge("a",22)) eff = one
         return eff
     },
     effect5(){
@@ -148,6 +166,7 @@ addLayer("a", {
         if(hasUpgrade("p",61)) p = p.mul(player[this.layer].points)
         var eff = p.div(10).add(10).log10().pow(0.75)
         //if(eff.gte(4)) eff = eff.sqrt().mul(2)
+        //if(inChallenge("a",22)) eff = one
         return eff
     },
     effectDescription(){
@@ -198,7 +217,7 @@ addLayer("a", {
     //autoUpgrade(){return hasMilestone("t",12) && player.a.aausetting},
     upgrades: {
         11: {
-            description: `最佳点数加成ap上限.(软上限前)<br><br>价格增长倍率:x5.`,
+            description(){return `最佳点数加成ap上限.(软上限前)<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum(256).mul(player.a.costmult)},
             costinc(){return ExpantaNum(5).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",11)},
@@ -219,7 +238,7 @@ addLayer("a", {
             },
         },
         12: {
-            description: `减弱e100点数软上限(^0.25 -> ^0.33).<br><br>价格增长倍率:x1.25.`,
+            description(){return `减弱e100点数软上限(^0.25 -> ^0.33).<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
             costinc(){return ExpantaNum(1.25).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",12)},
@@ -247,7 +266,7 @@ addLayer("a", {
             },
         },
         13: {
-            description: "解锁增量x.还有,欢迎再一次来到起点.升级31的效果以其3次根的效果加成增量x,升级32的时间x10后作用于增量x.<br><br>价格增长倍率:x1.",
+            description(){return "解锁增量x.还有,欢迎再一次来到起点.升级31的效果以其3次根的效果加成增量x,升级32的时间x10后作用于增量x.<br><br>价格增长倍率:x1."},
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
             costinc(){return ExpantaNum(1).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return hasMilestone("a",7)},
@@ -275,7 +294,7 @@ addLayer("a", {
             },
         },
         14: {
-            description: "p转的sin函数被替换为1.5.<br><br>价格增长倍率:x1.5.",
+            description(){return "p转的sin函数被替换为1.5.<br><br>价格增长倍率:x1.5."},
             cost(){return new OmegaNum(75).mul(player.a.costmult)},
             costinc(){return ExpantaNum(1.5).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",14)},
@@ -303,7 +322,7 @@ addLayer("a", {
             },
         },
         15: {
-            description: `减弱1e18时间速率软上限(^0.33 -> ^0.8).ap里程碑1的'pp基于c的获取指数/2'效果被反转.<br><br>价格增长倍率:x4.`,
+            description(){return `减弱1e18时间速率软上限(^0.33 -> ^0.8).ap里程碑1的'pp基于c的获取指数/2'效果被反转.<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("256").mul(player.a.costmult)},
             costinc(){return ExpantaNum(4).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",15)},
@@ -331,7 +350,7 @@ addLayer("a", {
             },
         },
         21: {
-            description: `pp1e20软上限被减弱.(^0.33 -> ^0.5)<br><br>价格增长倍率:x3.`,
+            description(){return `pp1e20软上限被减弱.(^0.33 -> ^0.5)<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
             costinc(){return ExpantaNum(3).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",21)},
@@ -359,7 +378,7 @@ addLayer("a", {
             },
         },
         22: {
-            description: `再次减弱点数e100软上限.(^0.25->^0.33或^0.33->^0.5)<br><br>价格增长倍率:x3.`,
+            description(){return `再次减弱点数e100软上限.(^0.25->^0.33或^0.33->^0.5)<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
             costinc(){return ExpantaNum(3).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",22)},
@@ -387,7 +406,7 @@ addLayer("a", {
             },
         },
         23: {
-            description: `你每秒获得1000%的pp.<br><br>价格增长倍率:x1.`,
+            description(){return `你每秒获得1000%的pp.<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum(50).mul(player.a.costmult)},
             costinc(){return ExpantaNum(1).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",23)},
@@ -415,7 +434,7 @@ addLayer("a", {
             },
         },
         24: {
-            description: `总计的被重置了的ap升级加成ap上限.(?<br><br>价格增长倍率:x2.`,
+            description(){return `总计的被重置了的ap升级加成ap上限.(?<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
             costinc(){return ExpantaNum(2).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",24)},
@@ -435,7 +454,7 @@ addLayer("a", {
             },
         },
         25: {
-            description: `提高ap获取指数.(^0.125->^0.25或^0.1875->0.3125)<br><br>价格增长倍率:x2.`,
+            description(){return `提高ap获取指数.(^0.125->^0.25或^0.1875->0.3125)<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("308").mul(player.a.costmult)},
             costinc(){return ExpantaNum(2).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",25)},
@@ -463,7 +482,7 @@ addLayer("a", {
             },
         },
         31: {
-            description: `最佳ap优化au11.<br><br>价格增长倍率:x25.`,
+            description(){return `最佳ap优化au11.<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("1024").mul(player.a.costmult)},
             costinc(){return ExpantaNum(25).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",31)&&hasMilestone("a",13)},
@@ -471,6 +490,7 @@ addLayer("a", {
                 var baseEff = player.a.best.pow(0.06)
                 if(player.t.nerf.au31) baseEff = player.a.points.pow(0.06)
                 baseEff = logsoftcap(baseEff,e(28),0.5)
+                baseEff = logsoftcap(baseEff,e(60),0.5)
                 return baseEff
             },
             effectDisplay(){return `^${format(upgradeEffect("a",31),1)}`},
@@ -483,7 +503,7 @@ addLayer("a", {
             },
         },
         32: {
-            description: `p34效果^1.5.<br><br>价格增长倍率:x1.`,
+            description(){return `p34效果^1.5.<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("128").mul(player.a.costmult)},
             costinc(){return ExpantaNum(1).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",32)&&hasMilestone("a",13)},
@@ -511,7 +531,7 @@ addLayer("a", {
             },
         },
         33: {
-            description: `解锁增量^.自动购买最大.<br><br>价格增长倍率:x25.`,
+            description(){return `解锁增量^.自动购买最大.<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("1024").mul(player.a.costmult)},
             costinc(){return ExpantaNum(25).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",33)&&hasMilestone("a",13)},
@@ -539,7 +559,7 @@ addLayer("a", {
             },
         },
         34: {
-            description: `延迟pp的1e75软上限至1e100.<br><br>价格增长倍率:x10.`,
+            description(){return `延迟pp的1e75软上限至1e100.<br><br>价格增长倍率:x${format(this.costinc())}.`},
             cost(){return new OmegaNum("1024").mul(player.a.costmult)},
             costinc(){return ExpantaNum(10).pow(player.t.nerf.APU)},//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",34)&&hasMilestone("a",13)},
@@ -567,9 +587,12 @@ addLayer("a", {
             },
         },
         35: {
-            description: `解锁新的ap里程碑.里程碑完成后仍然保留.购买时重置最佳ap.<br><br>价格增长倍率:x1024.`,
+            description(){return `解锁新的ap里程碑.里程碑完成后仍然保留.购买时重置最佳ap.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
             cost(){return new OmegaNum("10086").mul(player.a.costmult)},
-            costinc(){return ExpantaNum(1024).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            costinc(){
+                if(hasMilestone("a",34)) return one
+                return ExpantaNum(1024).pow(player.t.nerf.APU)
+            },//注：omeganum或数字都行
             unlocked(){return checkAroundUpg("a",35)&&hasMilestone("a",13)},
             /*effect(){
                 var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
@@ -596,25 +619,13 @@ addLayer("a", {
             },
         },
         41: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",41)},
-            /*effect(){
-                var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
-                baseEff = baseEff.mul(buyableEffect("p",11))
-                baseEff = baseEff.mul(buyableEffect("p",12))
-                //sc
-                if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
-                if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
-                if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
-                //p22:sin to p11
-                if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
-                return baseEff
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
             },
-            effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}*/
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
@@ -624,25 +635,13 @@ addLayer("a", {
             },
         },
         42: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",42)},
-            /*effect(){
-                var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
-                baseEff = baseEff.mul(buyableEffect("p",11))
-                baseEff = baseEff.mul(buyableEffect("p",12))
-                //sc
-                if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
-                if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
-                if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
-                //p22:sin to p11
-                if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
-                return baseEff
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
             },
-            effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}*/
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
@@ -652,25 +651,13 @@ addLayer("a", {
             },
         },
         43: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",43)},
-            /*effect(){
-                var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
-                baseEff = baseEff.mul(buyableEffect("p",11))
-                baseEff = baseEff.mul(buyableEffect("p",12))
-                //sc
-                if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
-                if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
-                if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
-                //p22:sin to p11
-                if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
-                return baseEff
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
             },
-            effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}*/
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
@@ -680,25 +667,13 @@ addLayer("a", {
             },
         },
         44: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",44)},
-            /*effect(){
-                var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
-                baseEff = baseEff.mul(buyableEffect("p",11))
-                baseEff = baseEff.mul(buyableEffect("p",12))
-                //sc
-                if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
-                if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
-                if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
-                //p22:sin to p11
-                if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
-                return baseEff
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
             },
-            effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}*/
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
@@ -708,25 +683,653 @@ addLayer("a", {
             },
         },
         45: {
-            description: `咕咕咕.<br><br>价格增长倍率:x1.`,
-            cost(){return new OmegaNum("10{2}10").mul(player.a.costmult)},
-            costinc(){return 1},//注：omeganum或数字都行
-            unlocked(){return checkAroundUpg("a",45)},
-            /*effect(){
-                var baseEff = ten.pow(player.points.mul(100)).pow(2).sub(1).mul(100000).add(1)
-                if(hasUpgrade("p",24)) baseEff = baseEff.pow(upgradeEffect("p",24))
-                baseEff = baseEff.mul(buyableEffect("p",11))
-                baseEff = baseEff.mul(buyableEffect("p",12))
-                //sc
-                if(baseEff.gt(10)) baseEff = baseEff.log10().pow(1.5).mul(10)
-                if(baseEff.gt(100)) baseEff = baseEff.pow(0.2).mul(1000**0.8)
-                if(baseEff.gt(1000)) baseEff = baseEff.pow(0.35).mul(1000**0.65)
-                if(baseEff.gt(1e4)) baseEff = baseEff.log10().pow(2).mul(1e4/16)
-                //p22:sin to p11
-                if(hasUpgrade("p",22)) baseEff = baseEff.mul(upgradeEffect("p",22))
-                return baseEff
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
             },
-            effectDisplay(){return `x${format(upgradeEffect("p",11),1)}`}*/
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        51: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        52: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        53: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        54: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        55: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        61: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        62: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        63: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        64: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        65: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        71: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        72: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        73: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        74: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        75: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        81: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        82: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        83: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        84: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        85: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        91: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        92: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        93: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        94: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        95: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        101: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        102: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        103: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        104: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        105: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        111: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        112: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        113: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        114: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        115: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        121: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        122: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        123: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        124: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
+            onPurchase(){
+                player.a.milestones = AUMilestonekeep();
+                player.a.points=new OmegaNum(0);
+                player.points=new OmegaNum(0)
+                for (let x = 2; x >= 0; x--) rowReset(x, "a")
+                player.a.costmult=player.a.costmult.mul(layers[this.layer].upgrades[this.id].costinc())
+            },
+        },
+        125: {
+            description(){return `咕咕咕.<br><br>价格增长倍率:x${format(this.costinc())}.`} ,
+            cost(){
+                if(inChallenge("a",22) || hasChallenge("a",22)) return getRandomAuCostWithSeed(this.id).mul(player.a.costmult)
+                return new OmegaNum("10{2}10")
+            },
+            costinc(){return getRandomAuCostIncWithSeed(this.id).pow(player.t.nerf.APU)},//注：omeganum或数字都行
+            unlocked(){return checkAroundUpg("a",this.id)},
             onPurchase(){
                 player.a.milestones = AUMilestonekeep();
                 player.a.points=new OmegaNum(0);
@@ -865,6 +1468,16 @@ addLayer("a", {
             unlocked(){return hasMilestone("a",33)},
             onEnter(){doACreset()},
             onExit(){player.a.activeChallenge = 21}
+        },
+        22: {
+            name: "深探行动",
+            challengeDescription: "你可以购买更多ap升级，但这些升级均不带有效果，唯一的作用是加成ap上限.所有p购买项效果锁定为1.",
+            canComplete(){return hasUpgrade("a",81) || hasUpgrade("a",82) ||hasUpgrade("a",83) ||hasUpgrade("a",84) ||hasUpgrade("a",85)},
+            goalDescription(){return "达到第八排au"},
+            rewardDisplay(){return `保留该挑战的所有增益.`},
+            unlocked(){return hasMilestone("a",34)},
+            onEnter(){doACreset()},
+            onExit(){player.a.activeChallenge = 22}
         },
     },
 
@@ -1087,6 +1700,12 @@ addLayer("a", {
             done() { return player.g.points.gte(1550) },
             unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
         },
+        34: {
+            requirementDescription: "35:e2e9点数.",
+            effectDescription: "新挑战.保留B和G节点的里程碑.au35不再使价格增长.ap里程碑9的指数改为5.挑战时保留该升级.",
+            done() { return player.points.gte("e2e9") },
+            unlocked(){return hasMilestone(this.layer,this.id-1)||hasMilestone(this.layer,this.id) },
+        },
     },
     passiveGeneration(){
         if(hasMilestone("a",22)) return 10
@@ -1100,6 +1719,7 @@ addLayer("a", {
         gain = gain.root(player.t.nerf.AP)
         //if(gain.gte(5)) gain = gain.pow(0.75).mul(5**0.25)
         if(gain.gte(100000)) gain = gain.cbrt().mul(100000**0.66666666666)
+        gain = logsoftcap(gain,e(1e33),0.75)
         if(player.a.points.add(gain).gt(getAPlimit())) return getAPlimit().sub(player.a.points).max(0)
         return gain.floor()
     },

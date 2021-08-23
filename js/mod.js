@@ -12,11 +12,13 @@
 
 // Set your version in num and name
 let VERSION = {
-	num: "1.1",
+	num: "1.2",
 	name: "",
 }
 
 let changelog = `<h1>更新:</h1><br>
+	<h3>v1.2</h3><br>
+		- 添加新挑战,当前endgame:约e2.5e9点数,1e120高德纳箭头点.<br><br>
 	<h3>v1.1</h3><br>
 		- 添加一些token内容,ac21可完成,当前endgame:约e2e9点数,e32高德纳箭头点.<br><br>
 	<h3>v1.1-beta-0.2</h3><br>
@@ -139,13 +141,13 @@ var displayThings = [
 		if(inChallenge("a",12) || player.t.nerf.AC.eq(2) || player.t.nerf.AC.eq(3)) basestr = basestr + `(${format(calcTickspeed())})`
 		return basestr
 	},
-	function(){return `当前endgame:约e2e9点数,e32高德纳箭头点.`},
+	function(){return `当前endgame:约e2.5e9点数,1e120高德纳箭头点.`},
 	function(){return `作者:QwQ(QwQe308,qq3174905334).`},
 ]
 
 // Determines when the game "ends"
 function isEndgame() {
-	return player.points.gte("e2e9")&&player.a.points.gte(1e32)
+	return player.points.gte("e2.5e9")&&player.a.points.gte(1e120)
 }
 
 
