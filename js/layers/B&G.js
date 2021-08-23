@@ -193,7 +193,7 @@
     doReset(layer){
         if(layer != "p" && layer != 'b'){
             var kp = []
-            if(hasMilestone("g",1)) kp.push("milestones")
+            if(hasMilestone("g",1) || hasMilestone("a",34)) kp.push("milestones")
             layerDataReset("b", kp)
         }
     }
@@ -412,8 +412,9 @@ addLayer("g", {
     },*/
     doReset(layer){
         if(layer == this.layer || layer == "p" || layer == "b") return
-        if(hasMilestone("t",5)){
+        if(hasMilestone("t",5) || hasMilestone("a",34)){
             layerDataReset(this.layer,["milestones"])
+            return
         }
         else layerDataReset(this.layer)
     },

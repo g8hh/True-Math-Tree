@@ -432,6 +432,7 @@ addLayer("p", {
                 if(baseEff.gt(25)) baseEff = baseEff.pow(0.5).mul(5)
                 if(hasMilestone("a",23)) baseEff = baseEff.mul(buyableEffect("a",12))
                 baseEff = logsoftcap(baseEff,e("5e9"),0.25)
+                if(inChallenge("a",22)) baseEff = one
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(1)},
@@ -465,6 +466,7 @@ addLayer("p", {
                 if(baseEff.gt(5)) baseEff = baseEff.pow(0.3333).mul(5**0.6666)
                 if(baseEff.gt(25)) baseEff = baseEff.pow(0.15).mul(25**0.85)
                 baseEff = logsoftcap(baseEff,e("20000"),0.25)
+                if(inChallenge("a",22)) baseEff = one
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(2)},
@@ -497,6 +499,7 @@ addLayer("p", {
                 var baseEff = getBuyableAmount(this.layer,this.id).add(1).pow(0.1)
                 if(baseEff.gt(25)) baseEff = baseEff.pow(0.25).mul(25**0.75)
                 baseEff = logsoftcap(baseEff,e("1e6"),1)
+                if(inChallenge("a",22)) baseEff = one
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(3)},
@@ -530,6 +533,7 @@ addLayer("p", {
                 if(baseEff.gt(2)) baseEff = baseEff.pow(0.75).mul(2**0.25)
                 if(baseEff.gt(5)) baseEff = baseEff.pow(0.3333).mul(5**0.6666)
                 baseEff = logsoftcap(baseEff,e("15"),0.25)
+                if(inChallenge("a",22)) baseEff = one
                 return baseEff
             },
             unlocked(){return hasUpgrade("p",25)&&upgradeEffect("p",25).gte(4)},
