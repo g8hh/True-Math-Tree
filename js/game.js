@@ -1,136 +1,444 @@
-// Variables
+var player;
+var needCanvasUpdate = true;
+var gameEnded = false;
+var scrolled = false;
 
-var player = transformToEN(DEFAULT_START, DEFAULT_START);
-var loaded = false;
-var interval;
-var intervalPerSec;
-var autoTimes = {};
-for (let i = 0; i < Object.keys(ROBOT_REQS).length; i++) autoTimes[Object.keys(ROBOT_REQS)[i]] = new ExpantaNum(0);
-var tmp = {};
-var last = getCurrentTime();
-var modesSelected = [];
-var reloaded = false;
-var ddState = "none";
-var notifier = new Notifier();
-var saveTimer = 0;
-var showContainer = true;
-var infActive = false;
-var fnTab = "nfn";
-var infTab = "infinity";
-var elmTab = "fermions";
-var bosTab = "gauge";
-var hcTab = "mainHC";
-var foamTab = "qf1";
-var skyTab = "skyrmions";
-var mltTab = "mltMap";
-var statTab = "mainStats";
-var statScalingsShown = false;
-var pionSel = 0;
-var spinorSel = 0;
-var mltSelected = "NONE";
-var ttaid = 1;
-var gluonTab = "r";
-var thTab = "tv";
-var enTab = "mainEN";
-var autoRobotTarget = 0
-var betaID = ""; //beta2.0
-var completedModeCombos = [];
-var needUpdate = true
-var updating = false
-var visUpdTicks = 1/0
-var robotActives = {}
-var correctLink = "jacorb90.me"
-var outerShiftDown = false
+// Don't change this
+const EN_VERSION = {
+  enNum: "1.1.1",
+  enName: "Format++"
+  
+}
+const TMT_VERSION = {
+	tmtNum: "2.6.0.1",
+	tmtName: "Fixed Reality"
+}
 
-// Game Loops 
-
-function tickWithoutTS(diff) {
-	saveTimer += diff.toNumber();
-	player.bestEnd = player.bestEnd.max(player.inf.endorsements)
-
-	if (tmp.ach[95].has && !nerfActive("noRockets"))
-		player.rockets = player.rockets.plus(tmp.rockets.layer.gain.times(diff));
-	else if (hasCollapseMilestone(9) && !nerfActive("noRockets"))
-		player.rockets = player.rockets.plus(tmp.rockets.layer.gain.times(diff.div(100)));
-
-	if (tmp.ach[96].has && !nerfActive("noCadavers"))
-		player.collapse.cadavers = player.collapse.cadavers.plus(tmp.collapse.layer.gain.times(diff));
-	else if (tmp.inf.upgs.has("2;4") && !nerfActive("noCadavers"))
-		player.collapse.cadavers = player.collapse.cadavers.plus(tmp.collapse.layer.gain.times(diff.div(100)));
-	if (tmp.ach[97].has && !nerfActive("noLifeEssence"))
-		player.collapse.lifeEssence = player.collapse.lifeEssence.plus(
-			player.collapse.cadavers.times(tmp.collapse.sacEff).max(1).times(diff)
-		);
-	else if (tmp.inf.upgs.has("5;3") && !nerfActive("noLifeEssence"))
-		player.collapse.lifeEssence = player.collapse.lifeEssence.plus(
-			player.collapse.cadavers.times(tmp.collapse.sacEff).max(1).times(diff.div(10))
-		);
-
-	if (player.pathogens.unl)
-		player.pathogens.amount = player.pathogens.amount.plus(
-			adjustGen(tmp.pathogens.gain, "pathogens").times(diff)
-		);
-	
-	if (player.dc.unl) tmp.dc.tick(diff);
-	if (player.inf.unl) infTick(diff);
-	if (modeActive("extreme")?tmp.fn.enh.unl:false) {
-		player.furnace.enhancedCoal = player.furnace.enhancedCoal.plus(adjustGen(tmp.fn.enh.gain, "fn").times(diff));
-	}
-	if (player.elementary.times.gt(0) || player.mlt.times.gt(0)) elTick(diff);
-	if (modeActive("hikers_dream")) {
-		player.energy = player.energy.sub(tmp.hd.energyLoss.times(diff)).max(0);
-		if (player.inf.endorsements.gte(10)) player.energy = player.energy.plus(tmp.hd.energyGen.times(diff)).min(getEnergyLim())
-		player.bestMotive = player.bestMotive.max(tmp.hd.motive)
-	}
-	if (modeActive("extreme")&&player.elementary.sky.unl) {
-		if (tmp.fn.pl.exp.gte(1)) player.plasma.amount = player.plasma.amount.root(tmp.fn.pl.exp).plus(diff).pow(tmp.fn.pl.exp);
-		player.plasma.whiteFlame = player.plasma.whiteFlame.plus(adjustGen(tmp.fn.pl.wfGain, "plasma").times(diff));
+function getResetGain(layer, useType = null) {
+	let type = useType
+	if (!useType){ 
+		type = tmp[layer].type
+		if (layers[layer].getResetGain !== undefined)
+			return layers[layer].getResetGain()
+	} 
+	if(tmp[layer].type == "none")
+		return new OmegaNum (0)
+	if (tmp[layer].gainExp.eq(0)) return OmegaNumZero
+	if (type=="static") {
+		if ((!tmp[layer].canBuyMax) || tmp[layer].baseAmount.lt(tmp[layer].requires)) return OmegaNumOne
+		let gain = tmp[layer].baseAmount.div(tmp[layer].requires).div(tmp[layer].gainMult).max(1).log(tmp[layer].base).times(tmp[layer].gainExp).pow(OmegaNum.pow(tmp[layer].exponent, -1))
+		gain = gain.times(tmp[layer].directMult)
+		return gain.floor().sub(player[layer].points).add(1).max(1);
+	} else if (type=="normal"){
+		if (tmp[layer].baseAmount.lt(tmp[layer].requires)) return OmegaNumZero
+		let gain = tmp[layer].baseAmount.div(tmp[layer].requires).pow(tmp[layer].exponent).times(tmp[layer].gainMult).pow(tmp[layer].gainExp)
+		if (gain.gte(tmp[layer].softcap)) gain = gain.pow(tmp[layer].softcapPower).times(tmp[layer].softcap.pow(OmegaNumOne.sub(tmp[layer].softcapPower)))
+		gain = gain.times(tmp[layer].directMult)
+		return gain.floor().max(0);
+	} else if (type=="custom"){
+		return layers[layer].getResetGain()
+	} else {
+		return OmegaNumZero
 	}
 }
 
-function tickWithTR(diff) {
-	player.velocity = player.velocity
-		.plus(adjustGen(tmp.acc, "vel").times(diff))
-		.min(nerfActive("maxVelActive") ? tmp.maxVel : 1 / 0)
-		.max(0);
-	player.distance = player.distance.plus(adjustGen(player.velocity, "dist").times(modeActive("hikers_dream")?tmp.hd.enEff:1).times(diff)).max(0);
-	let fc = multiverseCapped()
-	if (fc) {
-		player.velocity = player.velocity.min(DISTANCES.多宇宙)
-		player.distance = player.distance.min(DISTANCES.多宇宙)
-	}
-	player.inf.bestDist = player.inf.bestDist.max(player.distance)
-	player.bestDistance = player.bestDistance.max(player.distance)
-	player.bestV = player.bestV.max(player.velocity)
-	player.bestA = player.bestA.max(tmp.acc)
-	autoTick(diff);
-	if (modeActive("extreme")) {
-		if (player.rf.gt(0)) {
-			player.furnace.coal = player.furnace.coal.plus(adjustGen(tmp.fn.gain, "fn").times(ExpantaNum.div(diff, (inFC(5)?tmp.timeSpeed:1)))).max(0);
+function getNextAt(layer, canMax=false, useType = null) {
+	let type = useType
+	if (!useType) {
+		type = tmp[layer].type
+		if (layers[layer].getNextAt !== undefined)
+			return layers[layer].getNextAt(canMax)
+
+		}
+	if(tmp[layer].type == "none")
+		return new OmegaNum (Infinity)
+
+	if (tmp[layer].gainMult.lte(0)) return new OmegaNum(Infinity)
+	if (tmp[layer].gainExp.lte(0)) return new OmegaNum(Infinity)
+
+	if (type=="static") 
+	{
+		if (!tmp[layer].canBuyMax) canMax = false
+		let amt = player[layer].points.plus((canMax&&tmp[layer].baseAmount.gte(tmp[layer].nextAt))?tmp[layer].resetGain:0).div(tmp[layer].directMult)
+		let extraCost = OmegaNum.pow(tmp[layer].base, amt.pow(tmp[layer].exponent).div(tmp[layer].gainExp)).times(tmp[layer].gainMult)
+		let cost = extraCost.times(tmp[layer].requires).max(tmp[layer].requires)
+		if (tmp[layer].roundUpCost) cost = cost.ceil()
+		return cost;
+	} else if (type=="normal"){
+		let next = tmp[layer].resetGain.add(1).div(tmp[layer].directMult)
+		if (next.gte(tmp[layer].softcap)) next = next.div(tmp[layer].softcap.pow(OmegaNumOne.sub(tmp[layer].softcapPower))).pow(OmegaNumOne.div(tmp[layer].softcapPower))
+		next = next.root(tmp[layer].gainExp).div(tmp[layer].gainMult).root(tmp[layer].exponent).times(tmp[layer].requires).max(tmp[layer].requires)
+		if (tmp[layer].roundUpCost) next = next.ceil()
+		return next;
+	} else if (type=="custom"){
+		return layers[layer].getNextAt(canMax)
+	} else {
+		return OmegaNumZero
+	}}
+
+function softcap(value, cap, power = 0.5) {
+	if (value.lte(cap)) return value
+	else
+		return value.pow(power).times(cap.pow(OmegaNumOne.sub(power)))
+}
+
+// Return true if the layer should be highlighted. By default checks for upgrades only.
+function shouldNotify(layer){
+	for (id in tmp[layer].upgrades){
+		if (isPlainObject(layers[layer].upgrades[id])){
+			if (canAffordUpgrade(layer, id) && !hasUpgrade(layer, id) && tmp[layer].upgrades[id].unlocked){
+				return true
+			}
 		}
 	}
+	if (player[layer].activeChallenge && canCompleteChallenge(layer, player[layer].activeChallenge)) {
+		return true
+	}
+
+	if (tmp[layer].shouldNotify)
+		return true
+
+	if (isPlainObject(tmp[layer].tabFormat)) {
+		for (subtab in tmp[layer].tabFormat){
+			if (subtabShouldNotify(layer, 'mainTabs', subtab)) {
+				tmp[layer].trueGlowColor = tmp[layer].tabFormat[subtab].glowColor
+				return true
+			}
+		}
+	}
+
+	for (family in tmp[layer].microtabs) {
+		for (subtab in tmp[layer].microtabs[family]){
+			if (subtabShouldNotify(layer, family, subtab)) {
+				tmp[layer].trueGlowColor = tmp[layer].microtabs[family][subtab].glowColor
+				return true
+			}
+		}
+	}
+	 
+	return false
+	
 }
 
-function tickWithTS(diff) {
-	if (player.tr.active && !nerfActive("noTimeCubes"))
-		player.tr.cubes = player.tr.cubes.plus(adjustGen(getTimeCubeGain(), "tc").times(diff));
-	else if (tmp.ach[72].has && player.tr.unl && !nerfActive("noTimeCubes"))
-		player.tr.cubes = player.tr.cubes.plus(adjustGen(getTimeCubeGain(), "tc").times(diff.div(2)));
-	if (player.inf.derivatives.unl) tmp.inf.derv.tick(diff);
-	tickWithTR(diff.times(player.tr.active ? -1 : 1));
+function canReset(layer)
+{	
+	if (layers[layer].canReset!== undefined)
+		return run(layers[layer].canReset, layers[layer])
+	else if(tmp[layer].type == "normal")
+		return tmp[layer].baseAmount.gte(tmp[layer].requires)
+	else if(tmp[layer].type== "static")
+		return tmp[layer].baseAmount.gte(tmp[layer].nextAt) 
+	else 
+		return false
+}
+
+function rowReset(row, layer) {
+	for (lr in ROW_LAYERS[row]){
+		if(layers[lr].doReset) {
+
+			player[lr].activeChallenge = null // Exit challenges on any row reset on an equal or higher row
+			run(layers[lr].doReset, layers[lr], layer)
+		}
+		else
+			if(tmp[layer].row > tmp[lr].row && row !== "side" && !isNaN(row)) layerDataReset(lr)
+	}
+}
+
+function layerDataReset(layer, keep = []) {
+	let storedData = {unlocked: player[layer].unlocked, forceTooltip: player[layer].forceTooltip, noRespecConfirm: player[layer].noRespecConfirm, prevTab:player[layer].prevTab} // Always keep these
+
+	for (thing in keep) {
+		if (player[layer][keep[thing]] !== undefined)
+			storedData[keep[thing]] = player[layer][keep[thing]]
+	}
+	Vue.set(player[layer], "buyables", getStartBuyables(layer))
+	Vue.set(player[layer], "clickables", getStartClickables(layer))
+	Vue.set(player[layer], "challenges", getStartChallenges(layer))
+
+	layOver(player[layer], getStartLayerData(layer))
+	player[layer].upgrades = []
+	player[layer].milestones = []
+	player[layer].achievements = []
+	player[layer].challenges = getStartChallenges(layer)
+	resetBuyables(layer)
+
+	if (layers[layer].clickables && !player[layer].clickables) 
+		player[layer].clickables = getStartClickables(layer)
+	for (thing in storedData) {
+		player[layer][thing] =storedData[thing]
+	}
+}
+
+function resetBuyables(layer){
+	if (layers[layer].buyables) 
+		player[layer].buyables = getStartBuyables(layer)
+	player[layer].spentOnBuyables = OmegaNumZero
+}
+
+
+function addPoints(layer, gain) {
+	player[layer].points = player[layer].points.add(gain).max(0)
+	if (player[layer].best) player[layer].best = player[layer].best.max(player[layer].points)
+	if (player[layer].total) player[layer].total = player[layer].total.add(gain)
+}
+
+function generatePoints(layer, diff) {
+	addPoints(layer, tmp[layer].resetGain.times(diff))
+}
+
+var prevOnReset
+
+function doReset(layer, force=false) {
+	if (tmp[layer].type == "none") return
+	let row = tmp[layer].row
+	if (!force) {
+		if (tmp[layer].baseAmount.lt(tmp[layer].requires)) return;
+		let gain = tmp[layer].resetGain
+		if (tmp[layer].type=="static") {
+			if (tmp[layer].baseAmount.lt(tmp[layer].nextAt)) return;
+			gain =(tmp[layer].canBuyMax ? gain : 1)
+		} 
+		if (tmp[layer].type=="custom") {
+			if (!tmp[layer].canReset) return;
+		} 
+
+		if (layers[layer].onPrestige)
+			run(layers[layer].onPrestige, layers[layer], gain)
+		
+		addPoints(layer, gain)
+		updateMilestones(layer)
+		updateAchievements(layer)
+
+		if (!player[layer].unlocked) {
+			player[layer].unlocked = true;
+			needCanvasUpdate = true;
+
+			if (tmp[layer].increaseUnlockOrder){
+				lrs = tmp[layer].increaseUnlockOrder
+				for (lr in lrs)
+					if (!player[lrs[lr]].unlocked) player[lrs[lr]].unlockOrder++
+			}
+		}
+	
+		tmp[layer].baseAmount = OmegaNumZero // quick fix
+	}
+
+	if (run(layers[layer].resetsNothing, layers[layer])) return
+
+
+	for (layerResetting in layers) {
+		if (row >= layers[layerResetting].row && (!force || layerResetting != layer)) completeChallenge(layerResetting)
+	}
+
+	prevOnReset = {...player} 
+	player.points = (row == 0 ? OmegaNumZero : getStartPoints())
+
+	for (let x = row; x >= 0; x--) rowReset(x, layer)
+	rowReset("side", layer)
+	prevOnReset = undefined
+
+	player[layer].resetTime = 0
+
+	updateTemp()
+	updateTemp()
+}
+
+function resetRow(row) {
+	if (prompt('Are you sure you want to reset this row? It is highly recommended that you wait until the end of your current run before doing this! Type "I WANT TO RESET THIS" to confirm')!="I WANT TO RESET THIS") return
+	let pre_layers = ROW_LAYERS[row-1]
+	let layers = ROW_LAYERS[row]
+	let post_layers = ROW_LAYERS[row+1]
+	rowReset(row+1, post_layers[0])
+	doReset(pre_layers[0], true)
+	for (let layer in layers) {
+		player[layer].unlocked = false
+		if (player[layer].unlockOrder) player[layer].unlockOrder = 0
+	}
+	player.points = getStartPoints()
+	updateTemp();
+	resizeCanvas();
+}
+
+function startChallenge(layer, x) {
+	let enter = false
+	if (!player[layer].unlocked) return
+	if (player[layer].activeChallenge == x) {
+		completeChallenge(layer, x)
+		player[layer].activeChallenge = null
+	} else {
+		enter = true
+	}	
+	doReset(layer, true)
+	if(enter) {
+		player[layer].activeChallenge = x
+		run(layers[layer].challenges[x].onEnter, layers[layer].challenges[x])
+	}
+	updateChallengeTemp(layer)
+}
+
+function canCompleteChallenge(layer, x)
+{
+	if (x != player[layer].activeChallenge) return
+	let challenge = tmp[layer].challenges[x]
+	if (challenge.canComplete !== undefined) return challenge.canComplete
+
+	if (challenge.currencyInternalName){
+		let name = challenge.currencyInternalName
+		if (challenge.currencyLocation){
+			return !(challenge.currencyLocation[name].lt(challenge.goal)) 
+		}
+		else if (challenge.currencyLayer){
+			let lr = challenge.currencyLayer
+			return !(player[lr][name].lt(challenge.goal)) 
+		}
+		else {
+			return !(player[name].lt(challenge.goal))
+		}
+	}
+	else {
+		return !(player.points.lt(challenge.goal))
+	}
+
+}
+
+function completeChallenge(layer, x) {
+	var x = player[layer].activeChallenge
+	if (!x) return
+	
+	let completions = canCompleteChallenge(layer, x)
+	if (!completions){
+		 player[layer].activeChallenge = null
+		 run(layers[layer].challenges[x].onExit, layers[layer].challenges[x])
+		return
+	}
+	if (player[layer].challenges[x] < tmp[layer].challenges[x].completionLimit) {
+		needCanvasUpdate = true
+		player[layer].challenges[x] += completions
+		player[layer].challenges[x] = Math.min(player[layer].challenges[x], tmp[layer].challenges[x].completionLimit)
+		if (layers[layer].challenges[x].onComplete) run(layers[layer].challenges[x].onComplete, layers[layer].challenges[x])
+	}
+	player[layer].activeChallenge = null
+	run(layers[layer].challenges[x].onExit, layers[layer].challenges[x])
+	updateChallengeTemp(layer)
+}
+
+VERSION.withoutName = "v" + VERSION.num + (VERSION.pre ? " Pre-Release " + VERSION.pre : VERSION.pre ? " Beta " + VERSION.beta : "")
+VERSION.withName = VERSION.withoutName + (VERSION.name ? ": " + VERSION.name : "")
+
+
+function autobuyUpgrades(layer){
+	if (!tmp[layer].upgrades) return
+	for (id in tmp[layer].upgrades)
+		if (isPlainObject(tmp[layer].upgrades[id]) && (layers[layer].upgrades[id].canAfford === undefined || layers[layer].upgrades[id].canAfford() === true))
+			buyUpg(layer, id) 
 }
 
 function gameLoop(diff) {
-	visUpdTicks++
-	if (needUpdate) updating = true
-	updateBeforeTick();
-	if (showContainer && !needUpdate && !infActive && !multiversePaused()) {
-		tickWithoutTS(diff);
-		tickWithTS(diff.times(nerfActive("noTS") ? 1 : tmp.timeSpeed));
+	if (isEndgame() || gameEnded){
+		gameEnded = 1
+		clearParticles()
 	}
-	updateAfterTick();
-	if (updating) {
-		updating = false
-		needUpdate = false
+
+	if (isNaN(diff) || diff < 0) diff = 0
+	if (gameEnded && !player.keepGoing) {
+		diff = 0
+		//player.tab = "gameEnded"
+		clearParticles()
 	}
+
+	if (maxTickLength) {
+		let limit = maxTickLength()
+		if(diff > limit)
+			diff = limit
+	}
+	addTime(diff)
+	player.points = player.points.add(tmp.pointGen.times(diff)).max(0)
+
+	for (let x = 0; x <= maxRow; x++){
+		for (item in TREE_LAYERS[x]) {
+			let layer = TREE_LAYERS[x][item]
+			player[layer].resetTime += diff
+			if (tmp[layer].passiveGeneration) generatePoints(layer, diff*tmp[layer].passiveGeneration);
+			if (layers[layer].update) layers[layer].update(diff);
+		}
+	}
+
+	for (row in OTHER_LAYERS){
+		for (item in OTHER_LAYERS[row]) {
+			let layer = OTHER_LAYERS[row][item]
+			player[layer].resetTime += diff
+			if (tmp[layer].passiveGeneration) generatePoints(layer, diff*tmp[layer].passiveGeneration);
+			if (layers[layer].update) layers[layer].update(diff);
+		}
+	}	
+
+	for (let x = maxRow; x >= 0; x--){
+		for (item in TREE_LAYERS[x]) {
+			let layer = TREE_LAYERS[x][item]
+			if (tmp[layer].autoPrestige && tmp[layer].canReset) doReset(layer);
+			if (layers[layer].automate) layers[layer].automate();
+			if (tmp[layer].autoUpgrade) autobuyUpgrades(layer)
+		}
+	}
+
+	for (row in OTHER_LAYERS){
+		for (item in OTHER_LAYERS[row]) {
+			let layer = OTHER_LAYERS[row][item]
+			if (tmp[layer].autoPrestige && tmp[layer].canReset) doReset(layer);
+			if (layers[layer].automate) layers[layer].automate();
+				player[layer].best = player[layer].best.max(player[layer].points)
+			if (tmp[layer].autoUpgrade) autobuyUpgrades(layer)
+		}
+	}
+
+	for (layer in layers){
+		if (layers[layer].milestones) updateMilestones(layer);
+		if (layers[layer].achievements) updateAchievements(layer)
+	}
+
 }
+
+function hardReset() {
+	if (!confirm("Are you sure you want to do this? You will lose all your progress!")) return
+	player = null
+	localStorage.removeItem(modInfo.id);
+	localStorage.removeItem(modInfo.id+"_options");
+	window.location.reload();
+}
+
+var ticking = false
+
+var interval = setInterval(function() {
+	if (player===undefined||tmp===undefined) return;
+	if (ticking) return;
+	if (gameEnded&&!player.keepGoing) return;
+	ticking = true
+	let now = Date.now()
+	let diff = (now - player.time) / 1e3
+	let trueDiff = diff
+	if (player.offTime !== undefined) {
+		if (player.offTime.remain > modInfo.offlineLimit * 3600) player.offTime.remain = modInfo.offlineLimit * 3600
+		if (player.offTime.remain > 0) {
+			let offlineDiff = Math.max(player.offTime.remain / 10, diff)
+			player.offTime.remain -= offlineDiff
+			diff += offlineDiff
+		}
+		if (!player.offlineProd || player.offTime.remain <= 0) player.offTime = undefined
+	}
+	if (player.devSpeed) diff *= player.devSpeed
+	player.time = now
+	if (needCanvasUpdate){ resizeCanvas();
+		needCanvasUpdate = false;
+	}
+	tmp.scrolled = document.getElementById('treeTab') && document.getElementById('treeTab').scrollTop > 30
+	updateTemp();
+	updateOomps(diff);
+	updateWidth()
+	updateTabFormats()
+	gameLoop(diff)
+	adjustPopupTime(trueDiff)
+	updateParticles(trueDiff)
+	ticking = false
+}, 50)
+
+setInterval(function() {needCanvasUpdate = true}, 500)
